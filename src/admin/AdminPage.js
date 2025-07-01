@@ -5,32 +5,44 @@ import AdminDashboard from './AdminDashboard';
 import AdminMenus from './AdminMenus';
 import AdminItems from './AdminItems';
 import AdminPrintSettings from './AdminPrintSettings';
+// Vui lòng đảm bảo bạn đã import AdminTables nếu component này tồn tại.
+// Dựa trên file AdminPage.js bạn cung cấp, AdminTables không được sử dụng trực tiếp ở đây.
 
 const AdminPage = ({
   adminSection,
   setAdminSection,
   handleLogout,
-  // Menu Types
+  // Menu Data props
   menuTypes,
   setMenuTypes,
   addMenuType,
   deleteMenuType,
-  // Menu Items
   menuItems,
   addMenuItem,
   updateMenuItem,
   deleteMenuItem,
-  // Categories
   categories,
   addCategory,
   updateCategory,
   deleteCategory,
-  // Dashboard
+  // Dashboard Data props (Đảm bảo các props này được App.js truyền xuống)
   selectedDate,
   setSelectedDate,
   paymentFilter,
   setPaymentFilter,
+  // Các props mới từ useDashboardData mà App.js truyền xuống
+  dateRange, // Giờ đây AdminPage nhận dateRange
+  setDateRange, // Giờ đây AdminPage nhận setDateRange
+  aggregatedOrdersForDisplay, // Giờ đây AdminPage nhận aggregatedOrdersForDisplay
   MOCK_ORDERS_BY_DATE,
+  // Table Data props (từ useTableManagement)
+  tables, // Prop tables nhận từ App.js (là một đối tượng)
+  setTables,
+  addTable,
+  updateTable,
+  deleteTable,
+  // Print Settings
+  initialSettings,
 }) => {
   const renderSection = () => {
     switch (adminSection) {
@@ -41,7 +53,10 @@ const AdminPage = ({
             setSelectedDate={setSelectedDate}
             paymentFilter={paymentFilter}
             setPaymentFilter={setPaymentFilter}
-            MOCK_ORDERS_BY_DATE={MOCK_ORDERS_BY_DATE}
+            // Truyền các props mới xuống AdminDashboard
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            aggregatedOrdersForDisplay={aggregatedOrdersForDisplay}
             menuItems={menuItems}
             menuTypes={menuTypes}
           />
@@ -51,13 +66,19 @@ const AdminPage = ({
           <AdminMenus
             menuTypes={menuTypes}
             setMenuTypes={setMenuTypes}
-            menuItems={menuItems}
+            menuItems={menuItems} // Pass menuItems if needed for category item count
             addMenuType={addMenuType}
             deleteMenuType={deleteMenuType}
             categories={categories}
             addCategory={addCategory}
             updateCategory={updateCategory}
             deleteCategory={deleteCategory}
+            // SỬA LỖI: Chuyển đổi đối tượng tables thành mảng trước khi truyền xuống AdminMenus
+            tables={Object.values(tables)} // Chuyển đổi đối tượng tables thành mảng các giá trị
+            setTables={setTables}
+            addTable={addTable}
+            updateTable={updateTable}
+            deleteTable={deleteTable}
           />
         );
       case 'items':
@@ -65,14 +86,14 @@ const AdminPage = ({
           <AdminItems
             menuItems={menuItems}
             menuTypes={menuTypes}
-            categories={categories} // Cần truyền categories cho trang quản lý món ăn
+            categories={categories}
             addMenuItem={addMenuItem}
             updateMenuItem={updateMenuItem}
             deleteMenuItem={deleteMenuItem}
           />
         );
       case 'settings':
-        return <AdminPrintSettings />;
+        return <AdminPrintSettings initialSettings={initialSettings} />; // Pass initialSettings
       default:
         return (
           <AdminDashboard
@@ -80,7 +101,10 @@ const AdminPage = ({
             setSelectedDate={setSelectedDate}
             paymentFilter={paymentFilter}
             setPaymentFilter={setPaymentFilter}
-            MOCK_ORDERS_BY_DATE={MOCK_ORDERS_BY_DATE}
+            // Truyền các props mới xuống AdminDashboard
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            aggregatedOrdersForDisplay={aggregatedOrdersForDisplay}
             menuItems={menuItems}
             menuTypes={menuTypes}
           />

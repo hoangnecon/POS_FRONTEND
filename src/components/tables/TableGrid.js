@@ -4,7 +4,7 @@ import React from 'react';
 import { GalleryVertical, ShoppingBag } from 'lucide-react';
 
 const TableGrid = ({
-  tables,
+  tables, // Now expects an array of table objects
   selectedTable,
   setSelectedTable,
   orders,
@@ -26,17 +26,26 @@ const TableGrid = ({
 
   const getFilteredTables = () => {
     if (!tables) return [];
-    const allTables = Object.values(tables);
-    if (tableFilter === 'available') {
-      return allTables.filter(
-        (table) => !orders?.[table.id] || orders[table.id].length === 0
-      );
-    } else if (tableFilter === 'used') {
-      return allTables.filter(
-        (table) => orders?.[table.id] && orders[table.id].length > 0
-      );
-    }
-    return allTables;
+    
+    // Sort tables: special tables first, then by ID ascending
+    const sortedAndFilteredTables = [...tables]
+      .sort((a, b) => {
+        if (a.isSpecial && !b.isSpecial) return -1;
+        if (!a.isSpecial && b.isSpecial) return 1;
+        // If both are special or both are regular, sort by ID
+        return String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
+      })
+      .filter((table) => {
+        const hasOrders = orders?.[table.id] && orders[table.id].length > 0;
+        if (tableFilter === 'available') {
+          return !hasOrders;
+        } else if (tableFilter === 'used') {
+          return hasOrders;
+        }
+        return true; // 'all' filter
+      });
+
+    return sortedAndFilteredTables;
   };
 
   return (
@@ -128,25 +137,9 @@ const TableGrid = ({
       {/* Table Grid Wrapper with scroll */}
       <div className="flex-1 overflow-y-auto">
         <div className="grid grid-cols-6 gap-4">
-          {/* Takeaway Button - First position */}
-          <button
-            onClick={() => setSelectedTable('takeaway')}
-            className={`h-40 rounded-3xl flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 shadow-lg ${
-              selectedTable === 'takeaway'
-                ? 'bg-primary-button text-primary-main shadow-xl'
-                : 'bg-primary-main text-primary-button hover:bg-primary-secondary'
-            }`}
-            aria-label="Select takeaway option"
-          >
-            <div className="text-lg mb-1">
-              <ShoppingBag size={30} />
-            </div>
-            <div className="font-bold text-lg">Mang về</div>
-          </button>
-
-          {/* Regular Tables */}
           {getFilteredTables().map((table) => {
             const hasOrders = orders?.[table.id] && orders[table.id].length > 0;
+            const IconComponent = table.icon;
             return (
               <button
                 key={table.id}
@@ -163,12 +156,12 @@ const TableGrid = ({
                         : 'bg-primary-main text-primary-paragraph hover:bg-primary-secondary'
                   }
                 `}
-                aria-label={`Select table ${table.id}`}
+                aria-label={`Select table ${table.name}`}
               >
                 <div className="mb-1">
-                  <GalleryVertical size={30} />
+                  {IconComponent && <IconComponent size={30} />}
                 </div>
-                <div>Bàn {table.id}</div>
+                <div>{table.name}</div>
               </button>
             );
           })}

@@ -1,4 +1,5 @@
-import { UtensilsCrossed, Star, Coffee, ChefHat, Heart } from 'lucide-react';
+// src/data/mockData.js
+import { UtensilsCrossed, Star, Coffee, ChefHat, Heart, ShoppingBag, GalleryVertical } from 'lucide-react';
 
 export const MENU_ITEMS = [
   {
@@ -166,3 +167,38 @@ export const MOCK_ORDERS_BY_DATE = {
     }
   ]
 };
+
+// Định nghĩa dữ liệu bàn ban đầu với isSpecial và icon
+export const INITIAL_TABLES_DATA = [
+  { id: 'takeaway', name: 'Mang về', isSpecial: true, icon: ShoppingBag },
+  { id: 1, name: 'Bàn 1', isSpecial: false, icon: GalleryVertical },
+  { id: 2, name: 'Bàn 2', isSpecial: false, icon: GalleryVertical },
+  { id: 3, name: 'Bàn 3', isSpecial: false, icon: GalleryVertical },
+  { id: 4, name: 'Bàn 4', isSpecial: false, icon: GalleryVertical },
+  { id: 5, name: 'Bàn 5', isSpecial: false, icon: GalleryVertical },
+  { id: 6, name: 'Bàn 6', isSpecial: false, icon: GalleryVertical },
+  { id: 7, name: 'Bàn 7', isSpecial: false, icon: GalleryVertical },
+  { id: 8, name: 'Bàn 8', isSpecial: false, icon: GalleryVertical },
+  { id: 9, name: 'Bàn 9', isSpecial: false, icon: GalleryVertical },
+  { id: 10, name: 'Bàn 10', isSpecial: false, icon: GalleryVertical },
+  { id: 11, name: 'Bàn 11', isSpecial: false, icon: GalleryVertical },
+  { id: 12, name: 'Bàn 12', isSpecial: false, icon: GalleryVertical },
+  { id: 13, name: 'Bàn 13', isSpecial: false, icon: GalleryVertical },
+  { id: 14, name: 'Bàn 14', isSpecial: false, icon: GalleryVertical },
+  { id: 15, name: 'Bàn 15', isSpecial: false, icon: GalleryVertical },
+  { id: 16, name: 'Bàn 16', isSpecial: false, icon: GalleryVertical },
+  { id: 17, name: 'Bàn 17', isSpecial: false, icon: GalleryVertical },
+  { id: 18, name: 'Bàn 18', isSpecial: false, icon: GalleryVertical },
+  { id: 19, name: 'Bàn 19', isSpecial: false, icon: GalleryVertical },
+  { id: 20, name: 'Bàn 20', isSpecial: false, icon: GalleryVertical },
+  { id: 21, name: 'Bàn 21', isSpecial: false, icon: GalleryVertical },
+  { id: 22, name: 'Bàn 22', isSpecial: false, icon: GalleryVertical },
+  { id: 23, name: 'Bàn 23', isSpecial: false, icon: GalleryVertical },
+  { id: 24, name: 'Bàn 24', isSpecial: false, icon: GalleryVertical },
+  { id: 25, name: 'Bàn 25', isSpecial: false, icon: GalleryVertical },
+  { id: 26, name: 'Bàn 26', isSpecial: false, icon: GalleryVertical },
+  { id: 27, name: 'Bàn 27', isSpecial: false, icon: GalleryVertical },
+  { id: 28, name: 'Bàn 28', isSpecial: false, icon: GalleryVertical },
+  { id: 29, name: 'Bàn 29', isSpecial: false, icon: GalleryVertical },
+  { id: 30, name: 'Bàn 30', isSpecial: false, icon: GalleryVertical },
+];

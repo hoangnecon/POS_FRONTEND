@@ -16,9 +16,11 @@ const AdminDashboard = ({
   setSelectedDate,
   paymentFilter,
   setPaymentFilter,
-  MOCK_ORDERS_BY_DATE,
+  aggregatedOrdersForDisplay = [], // Giá trị mặc định là mảng rỗng để đảm bảo nó luôn là một mảng
   menuItems,
   menuTypes,
+  dateRange,
+  setDateRange,
 }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
@@ -28,23 +30,22 @@ const AdminDashboard = ({
     setShowOrderDetails(true);
   };
 
-  const getOrdersForDate = () => {
-    return MOCK_ORDERS_BY_DATE[selectedDate] || [];
-  };
+  // Đảm bảo ordersForCurrentPeriod luôn là một mảng
+  const ordersForCurrentPeriod = aggregatedOrdersForDisplay || [];
 
-  const getFilteredOrders = () => {
-    const ordersForDate = getOrdersForDate();
-    if (paymentFilter === 'all') return ordersForDate;
-    return ordersForDate.filter((order) => order.paymentMethod === paymentFilter);
+  const getFilteredOrdersByPayment = () => {
+    // Sử dụng ordersForCurrentPeriod đã được đảm bảo là mảng
+    if (paymentFilter === 'all') return ordersForCurrentPeriod;
+    return ordersForCurrentPeriod.filter((order) => order.paymentMethod === paymentFilter);
   };
 
   const getRevenueByPayment = () => {
-    const ordersForDate = getOrdersForDate();
-    const cashRevenue = ordersForDate
+    // Sử dụng ordersForCurrentPeriod đã được đảm bảo là mảng
+    const cashRevenue = ordersForCurrentPeriod
       .filter((order) => order.paymentMethod === 'cash')
       .reduce((sum, order) => sum + order.total, 0);
 
-    const transferRevenue = ordersForDate
+    const transferRevenue = ordersForCurrentPeriod
       .filter((order) => order.paymentMethod === 'transfer')
       .reduce((sum, order) => sum + order.total, 0);
 
@@ -52,11 +53,13 @@ const AdminDashboard = ({
   };
 
   const getBestSellingItems = () => {
-    const ordersForDate = getOrdersForDate();
+    // Sử dụng ordersForCurrentPeriod đã được đảm bảo là mảng
     const itemCount = {};
-    ordersForDate.forEach((order) => {
+    ordersForCurrentPeriod.forEach((order) => {
       order.items.forEach((item) => {
-        itemCount[item.name] = (itemCount[item.name] || 0) + item.quantity;
+        // Kiểm tra an toàn cho item.name nếu có thể là undefined
+        const itemName = item.name || 'Unknown Item';
+        itemCount[itemName] = (itemCount[itemName] || 0) + item.quantity;
       });
     });
 
@@ -66,15 +69,31 @@ const AdminDashboard = ({
       .map(([name, count]) => ({ name, count }));
   };
 
+  const filteredOrders = getFilteredOrdersByPayment();
   const revenueData = getRevenueByPayment();
   const bestSelling = getBestSellingItems();
-  const filteredOrders = getFilteredOrders();
-  const ordersForDate = getOrdersForDate();
-  const totalRevenue = revenueData.cash + revenueData.transfer;
+
+  const currentDisplayedRevenue = filteredOrders.reduce((sum, order) => sum + order.total, 0);
+  const currentDisplayedOrderCount = filteredOrders.length;
+
+  const formatDateLabel = () => {
+    const date = new Date(selectedDate);
+    if (dateRange === 'day') {
+      return selectedDate === new Date().toISOString().split('T')[0] ? 'Hôm nay' : `Ngày ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+    } else if (dateRange === 'week') {
+      const startOfWeek = new Date(date);
+      startOfWeek.setDate(date.getDate() - (date.getDay() + 6) % 7); // Monday
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      return `Tuần từ ${startOfWeek.getDate()}/${startOfWeek.getMonth() + 1} đến ${endOfWeek.getDate()}/${endOfWeek.getMonth() + 1}`;
+    } else if (dateRange === 'month') {
+      return `Tháng ${date.getMonth() + 1}/${date.getFullYear()}`;
+    }
+    return '';
+  };
 
   return (
     <div className="p-8 h-full overflow-y-auto bg-primary-bg">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-primary-headline mb-3">
           Admin Dashboard
@@ -82,7 +101,6 @@ const AdminDashboard = ({
         <p className="text-primary-paragraph text-lg">Quản lý tổng quan hệ thống</p>
       </div>
 
-      {/* Controls */}
       <div className="flex gap-4 mb-8">
         <div className="flex items-center gap-2">
           <CalendarDays size={20} className="text-primary-headline" />
@@ -92,6 +110,39 @@ const AdminDashboard = ({
             onChange={(e) => setSelectedDate(e.target.value)}
             className="px-4 py-2 bg-primary-main rounded-xl text-primary-headline focus:ring-2 focus:ring-sidebar-gradient shadow-md"
           />
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setDateRange('day')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all duration-300 shadow-md ${
+              dateRange === 'day'
+                ? 'bg-primary-button text-primary-main shadow-lg'
+                : 'bg-primary-main text-primary-headline hover:bg-primary-highlight'
+            }`}
+          >
+            Ngày
+          </button>
+          <button
+            onClick={() => setDateRange('week')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all duration-300 shadow-md ${
+              dateRange === 'week'
+                ? 'bg-primary-button text-primary-main shadow-lg'
+                : 'bg-primary-main text-primary-headline hover:bg-primary-highlight'
+            }`}
+          >
+            Tuần
+          </button>
+          <button
+            onClick={() => setDateRange('month')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all duration-300 shadow-md ${
+              dateRange === 'month'
+                ? 'bg-primary-button text-primary-main shadow-lg'
+                : 'bg-primary-main text-primary-headline hover:bg-primary-highlight'
+            }`}
+          >
+            Tháng
+          </button>
         </div>
 
         <select
@@ -105,7 +156,6 @@ const AdminDashboard = ({
         </select>
       </div>
 
-      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-primary-main rounded-3xl p-6 shadow-xl">
           <div className="flex items-center justify-between mb-4">
@@ -115,10 +165,11 @@ const AdminDashboard = ({
             </div>
           </div>
           <p className="text-3xl font-bold text-primary-headline mb-2">
-            {totalRevenue.toLocaleString('vi-VN')}đ
+            {currentDisplayedRevenue.toLocaleString('vi-VN')}đ
           </p>
           <p className="text-sm text-primary-headline">
-            {selectedDate === new Date().toISOString().split('T')[0] ? 'Hôm nay' : selectedDate}
+             {formatDateLabel()}
+             {paymentFilter !== 'all' && ` (${paymentFilter === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'})`}
           </p>
         </div>
 
@@ -129,9 +180,10 @@ const AdminDashboard = ({
               <Receipt size={20} className="text-primary-main" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-primary-headline mb-2">{ordersForDate.length}</p>
+          <p className="text-3xl font-bold text-primary-headline mb-2">{currentDisplayedOrderCount}</p>
           <p className="text-sm text-primary-headline">
-            {selectedDate === new Date().toISOString().split('T')[0] ? 'Hôm nay' : selectedDate}
+             {formatDateLabel()}
+             {paymentFilter !== 'all' && ` (${paymentFilter === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'})`}
           </p>
         </div>
 
@@ -158,7 +210,6 @@ const AdminDashboard = ({
         </div>
       </div>
 
-      {/* Charts and Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Best Selling Items */}
         <div className="bg-primary-main rounded-3xl p-6 shadow-xl">
@@ -178,7 +229,7 @@ const AdminDashboard = ({
               ))}
             </div>
           ) : (
-            <p className="text-primary-paragraph text-center py-8">Không có dữ liệu cho ngày này</p>
+            <p className="text-primary-paragraph text-center py-8">Không có dữ liệu cho khoảng thời gian này</p>
           )}
         </div>
 
@@ -225,13 +276,12 @@ const AdminDashboard = ({
               ))}
             </div>
           ) : (
-            <p className="text-primary-paragraph text-center py-8">Không có đơn hàng cho ngày này</p>
+            <p className="text-primary-paragraph text-center py-8">Không có đơn hàng cho khoảng thời gian này</p>
           )}
         </div>
       </div>
 
-      {/* Revenue Analytics */}
-      <div className="mt-8">
+      <div className="mt-8"> {/* Thẻ div mở cho Revenue Analytics */}
         <div className="bg-primary-main rounded-3xl p-6 shadow-xl">
           <h3 className="text-xl font-bold text-primary-headline mb-6">Phân tích doanh thu</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -253,13 +303,12 @@ const AdminDashboard = ({
           <div className="mt-6 pt-6 border-t border-primary-stroke">
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-primary-headline">Tổng doanh thu</span>
-              <span className="text-2xl font-bold text-primary-headline">{totalRevenue.toLocaleString('vi-VN')}đ</span>
+              <span className="text-2xl font-bold text-primary-headline">{(revenueData.cash + revenueData.transfer).toLocaleString('vi-VN')}đ</span>
             </div>
           </div>
         </div>
-      </div>
+      </div> {/* Thẻ div đóng cho Revenue Analytics */}
 
-      {/* Order Details Modal */}
       {showOrderDetails && selectedOrder && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-primary-main rounded-2xl p-6 m-4 w-full max-w-2xl shadow-2xl max-h-[80vh] overflow-y-auto">

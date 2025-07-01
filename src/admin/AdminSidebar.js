@@ -2,10 +2,11 @@
 import React from 'react';
 import {
   BarChart3,
-  Package,
+  Package, // Icon cho Menu & Bàn
   UtensilsCrossed,
   Settings,
   LogOut,
+  // LayoutGrid, // Không cần icon này nữa
 } from 'lucide-react';
 
 const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
@@ -35,7 +36,7 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
               : 'text-white hover:text-white hover:bg-primary-highlight'
           }`}
         >
-          <Package size={22} />
+          <Package size={22} /> {/* Icon này sẽ đại diện cho cả Menu và Bàn */}
           {adminSection === 'menus' && (
             <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />
           )}
@@ -54,6 +55,8 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
             <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />
           )}
         </button>
+
+        {/* Nút "Bàn" riêng biệt đã được loại bỏ */}
       </div>
 
       {/* Secondary Navigation */}
