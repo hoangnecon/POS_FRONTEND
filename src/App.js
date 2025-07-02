@@ -1,19 +1,8 @@
+// src/App.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
-import LoginPage from './components/auth/LoginPage';
-import StaffPinLoginPage from './components/auth/StaffPinLoginPage';
-import AdminPage from './admin/AdminPage';
-import Sidebar from './components/common/Sidebar';
-import MobileHeader from './components/common/MobileHeader';
-import TableGrid from './components/tables/TableGrid';
-import MenuSection from './components/menu/MenuSection';
-import Dashboard from './components/dashboard/Dashboard';
-import CashierExpenses from './cashier/CashierExpenses';
-import OrderPanel from './components/order/OrderPanel';
-import ChangeTableDialog from './components/order/ChangeTableDialog';
-import PrintReceipt from './components/order/PrintReceipt';
-import { X, AlertCircle } from 'lucide-react';
-import { MOCK_ORDERS_BY_DATE } from './data/mockData';
+
+// Import hooks
 import useAuth from './hooks/useAuth';
 import useTableManagement from './hooks/useTableManagement';
 import useOrderManagement from './hooks/useOrderManagement';
@@ -26,11 +15,31 @@ import useBankSettings from './hooks/useBankSettings';
 import useBankList from './hooks/useBankList';
 import useStaffManagement from './hooks/useStaffManagement';
 
+// Import components
+import LoginPage from './components/auth/LoginPage';
+import StaffPinLoginPage from './components/auth/StaffPinLoginPage';
+import AdminPage from './admin/AdminPage';
+import Sidebar from './components/common/Sidebar';
+import MobileHeader from './components/common/MobileHeader';
+import TableGrid from './components/tables/TableGrid';
+import MenuSection from './components/menu/MenuSection';
+import Dashboard from './components/dashboard/Dashboard';
+import CashierExpenses from './cashier/CashierExpenses';
+import OrderPanel from './components/order/OrderPanel';
+import ChangeTableDialog from './components/order/ChangeTableDialog';
+import PrintReceipt from './components/order/PrintReceipt'; 
+import { X, AlertCircle } from 'lucide-react';
+
+// Import data
+import { MOCK_ORDERS_BY_DATE } from './data/mockData';
+import { initialPrintSettings } from './data/initialPrintSettings';
+import { generateReceiptHtml } from './utils/generateReceiptHtml';
+
 function App() {
   const [activeSection, setActiveSection] = useState('tables');
   const [adminSection, setAdminSection] = useState('dashboard');
   const [notifications, setNotifications] = useState([]);
-  const [receiptToPrint, setReceiptToPrint] = useState(null);
+  const [receiptToPrint, setReceiptToPrint] = useState(null); 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobileOrderPanelOpen, setIsMobileOrderPanelOpen] = useState(false);
   const [isDemoModeActive, setIsDemoModeActive] = useState(true);
@@ -68,9 +77,9 @@ function App() {
     autoOpenMenu, handleAutoOpenMenuToggle,
     addToOrder, updateQuantity, clearTable,
     handleNoteSubmit, openTableNoteDialog, openItemNoteDialog, handleChangeTable,
-  } = useOrderManagement(tables, menuItems, addNotification);
+  }= useOrderManagement(tables, menuItems, addNotification);
 
-  const { getReceiptData, initialSettings } = usePrinting(orders, selectedTable, tables);
+  const { getReceiptData } = usePrinting(orders, selectedTable, tables, bankSettings, banks); 
 
   const {
     authLevel, loggedInStaff, loginEmail, setLoginEmail, loginPassword, setLoginPassword,
@@ -95,31 +104,58 @@ function App() {
     if (selectedTable && autoOpenMenu) setActiveSection('menu');
   }, [selectedTable, autoOpenMenu]);
 
-  const componentRef = useRef();
+  const componentRef = useRef(); 
 
-  useEffect(() => {
+  useEffect(() => { 
+    console.log("App.js useEffect for printing: receiptToPrint changed", receiptToPrint); 
     if (receiptToPrint && componentRef.current) {
-      console.log('useEffect: receiptToPrint:', receiptToPrint);
+      console.log("App.js useEffect: componentRef.current is available, attempting print."); 
       const timer = setTimeout(() => {
-        console.log('useEffect: Gọi window.print');
+        console.log('App.js useEffect: Calling window.print()'); 
         window.print();
-        setReceiptToPrint(null); // Xóa sau khi in
-      }, 100);
+        setReceiptToPrint(null); 
+      }, 500); 
       return () => clearTimeout(timer);
+    } else if (receiptToPrint) {
+        console.warn("App.js useEffect: receiptToPrint is set, but componentRef.current is not available yet."); 
     }
   }, [receiptToPrint]);
 
+
   const processPaymentAndOrders = useCallback((paymentData, type = 'full') => {
     console.log('processPaymentAndOrders: Bắt đầu xử lý.');
-    const receiptType = type === 'full' ? 'provisional' : 'kitchen';
-    const dataForPrint = getReceiptData(receiptType);
+    
+    let receiptType;
+    if (type === 'provisional') {
+      receiptType = 'provisional';
+    } else if (type === 'full') {
+      receiptType = 'provisional';
+    } else {
+      receiptType = 'kitchen';
+    }
 
-    if (dataForPrint) {
-      dataForPrint.cashier = loggedInStaff?.name || 'Không xác định';
-      dataForPrint.bankSettings = bankSettings || {};
-      dataForPrint.banks = banks || [];
-      dataForPrint.settings = initialSettings || {};
-      setReceiptToPrint(dataForPrint);
+    const currentOrderItems = orders[selectedTable] || [];
+    const orderTotalAmount = currentOrderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const orderTable = tables.find(t => t.id === selectedTable)?.name || 'Không xác định';
+
+    const orderDataForHtml = {
+      items: currentOrderItems,
+      total: orderTotalAmount,
+      table: orderTable,
+      cashier: loggedInStaff?.name || 'N/A',
+    };
+
+    const savedSettings = localStorage.getItem('printSettings');
+    const currentPrintSettings = savedSettings ? { ...initialPrintSettings, ...JSON.parse(savedSettings) } : initialPrintSettings;
+
+    const htmlContent = generateReceiptHtml(orderDataForHtml, currentPrintSettings, bankSettings, banks, receiptType);
+
+    console.log("processPaymentAndOrders: Generated HTML Content length:", htmlContent ? htmlContent.length : 0); 
+
+    if (htmlContent) {
+      setReceiptToPrint({ html: htmlContent }); 
+      console.log("processPaymentAndOrders: receiptToPrint state set."); 
+      
     } else {
       addNotification({
         id: `print-error-${Date.now()}`,
@@ -139,19 +175,13 @@ function App() {
       }).filter((item) => item.quantity > 0);
       setOrders({ ...orders, [selectedTable]: updatedOrder });
     }
-  }, [addNotification, getReceiptData, loggedInStaff, bankSettings, banks, clearTable, orders, selectedTable, setOrders, initialSettings]);
+  }, [addNotification, orders, selectedTable, tables, loggedInStaff, bankSettings, banks, clearTable, setOrders]);
 
   const handleToggleView = useCallback(() => {
     setIsDemoAdminView(prev => !prev);
     setActiveSection('tables');
     setAdminSection('dashboard');
   }, []);
-
-  const printComponent = receiptToPrint ? (
-    <PrintReceipt ref={componentRef} receiptData={receiptToPrint} />
-  ) : (
-    <PrintReceipt ref={componentRef} receiptData={null} />
-  );
 
   return (
     <>
@@ -194,7 +224,7 @@ function App() {
                 addTable={addTable}
                 updateTable={updateTable}
                 deleteTable={deleteTable}
-                initialSettings={initialSettings}
+                initialSettings={initialPrintSettings}
                 expenses={expenses}
                 addExpense={addExpense}
                 currentTheme={theme}
@@ -367,7 +397,7 @@ function App() {
                   addTable={addTable}
                   updateTable={updateTable}
                   deleteTable={deleteTable}
-                  initialSettings={initialSettings}
+                  initialSettings={initialPrintSettings}
                   expenses={expenses}
                   addExpense={addExpense}
                   currentTheme={theme}
@@ -534,8 +564,11 @@ function App() {
         ))}
       </div>
 
-      <div style={{ display: 'none' }}>
-        {printComponent}
+      {/* This is the hidden component that will be printed */}
+      {/* Đảm bảo PrintReceipt component được render khi receiptToPrint có dữ liệu */}
+      {/* Sử dụng className="print-container-wrapper" để CSS @media print có thể kiểm soát */}
+      <div className="print-container-wrapper" style={{ display: receiptToPrint ? 'block' : 'none' }}>
+        <PrintReceipt ref={componentRef} receiptData={receiptToPrint} />
       </div>
 
       {showNoteDialog && (

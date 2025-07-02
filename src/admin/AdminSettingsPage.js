@@ -1,3 +1,4 @@
+// src/admin/AdminSettingsPage.js
 import React, { useState } from 'react';
 import AdminPrintSettings from './AdminPrintSettings';
 import AdminColorSettings from './AdminColorSettings';
@@ -15,7 +16,7 @@ const AdminSettingsPage = ({
   bankSettings,
   setBankSettings,
   bankList,
-  bankListLoading,
+  bankListLoading, // Đảm bảo prop này được nhận
 }) => {
   const [activeTab, setActiveTab] = useState('print');
 
@@ -72,7 +73,7 @@ const AdminSettingsPage = ({
       </div>
 
       <div>
-        {activeTab === 'print' && <AdminPrintSettings initialSettings={initialSettings} />}
+        {activeTab === 'print' && <AdminPrintSettings bankSettings={bankSettings} banks={bankList} bankListLoading={bankListLoading} />}
         {activeTab === 'color' && <AdminColorSettings currentTheme={currentTheme} onThemeChange={onThemeChange} />}
         {activeTab === 'discount' && (
           <AdminDiscountSettings

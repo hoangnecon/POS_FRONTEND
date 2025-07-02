@@ -1,3 +1,4 @@
+/* src/App.css */
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
@@ -262,7 +263,7 @@ input, textarea, select {
 }
 
 .menu-item::before {
-  content: '';
+  content: ''; /* Đã sửa lỗi tại đây */
   position: absolute;
   top: 0;
   left: 0;
@@ -527,27 +528,6 @@ select:focus-visible {
   }
 }
 
-/* Print Styles */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  
-  .print-section,
-  .print-section * {
-    visibility: visible;
-  }
-  
-  .print-section {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    background: white !important;
-    color: black !important;
-  }
-}
-
 /* Accessibility Enhancements */
 .sr-only {
   position: absolute;
@@ -701,4 +681,36 @@ input[type="date"]:focus {
 .clear-button:hover {
   background-color: #e04235;
   transform: scale(1.05);
+}
+
+
+/* Print Styles: Make all content hidden for print media by default, except what we explicitly want to print */
+@media print {
+  body > *:not(.print-container-wrapper) { /* Hide everything directly under body EXCEPT our print wrapper */
+    display: none !important;
+  }
+
+  .print-container-wrapper {
+    visibility: visible !important; /* Make our print content visible */
+    height: auto !important; /* Allow height to expand */
+    overflow: visible !important; /* Allow overflow */
+    position: absolute !important; /* Use absolute to ensure it's in a known position */
+    left: 0 !important; /* Place at top-left of the print page */
+    top: 0 !important;
+    width: 100% !important; /* Take full width of print page */
+    background: white !important; /* Ensure white background for print */
+    color: black !important; /* Ensure text color is black */
+  }
+
+  /* Ensure print-content inside print-container-wrapper also takes appropriate styling */
+  .print-container-wrapper .print-content {
+      width: 57mm !important; /* Force K57 width */
+      margin: 0 auto !important; /* Center the content */
+      padding: 0 !important; /* Remove padding if any on the wrapper */
+      box-shadow: none !important; /* Remove shadows */
+      border: none !important; /* Remove borders */
+      /* Ensure colors are printed */
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+  }
 }
