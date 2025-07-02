@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import{
+import {
   CalendarDays,
   DollarSign,
   Receipt,
@@ -14,7 +14,7 @@ const Dashboard = ({
   setSelectedDate,
   paymentFilter,
   setPaymentFilter,
-  aggregatedOrdersForDisplay = [], // Giá trị mặc định là mảng rỗng để đảm bảo nó luôn là một mảng
+  aggregatedOrdersForDisplay = [],
   dateRange,
   setDateRange,
 }) => {
@@ -26,17 +26,14 @@ const Dashboard = ({
     setShowOrderDetails(true);
   };
 
-  // Đảm bảo ordersForCurrentPeriod luôn là một mảng
   const ordersForCurrentPeriod = aggregatedOrdersForDisplay || [];
 
   const getFilteredOrdersByPayment = () => {
-    // Sử dụng ordersForCurrentPeriod đã được đảm bảo là mảng
     if (paymentFilter === 'all') return ordersForCurrentPeriod;
     return ordersForCurrentPeriod.filter((order) => order.paymentMethod === paymentFilter);
   };
 
   const getRevenueByPayment = () => {
-    // Sử dụng ordersForCurrentPeriod đã được đảm bảo là mảng
     const cashRevenue = ordersForCurrentPeriod
       .filter((order) => order.paymentMethod === 'cash')
       .reduce((sum, order) => sum + order.total, 0);
@@ -49,11 +46,9 @@ const Dashboard = ({
   };
 
   const getBestSellingItems = () => {
-    // Sử dụng ordersForCurrentPeriod đã được đảm bảo là mảng
     const itemCount = {};
     ordersForCurrentPeriod.forEach((order) => {
       order.items.forEach((item) => {
-        // Kiểm tra an toàn cho item.name nếu có thể là undefined
         const itemName = item.name || 'Unknown Item';
         itemCount[itemName] = (itemCount[itemName] || 0) + item.quantity;
       });
@@ -73,7 +68,8 @@ const Dashboard = ({
   const currentDisplayedOrderCount = filteredOrders.length;
 
   const formatDateLabel = () => {
-    const date = new Date(selectedDate);
+    // Adding 'T00:00:00' ensures the date is parsed in the local timezone, avoiding UTC conversion issues.
+    const date = new Date(selectedDate + 'T00:00:00');
     if (dateRange === 'day') {
       return selectedDate === new Date().toISOString().split('T')[0] ? 'Hôm nay' : `Ngày ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
     } else if (dateRange === 'week') {
@@ -89,14 +85,14 @@ const Dashboard = ({
   };
 
   return (
-    <div className="p-8 h-full overflow-y-auto bg-primary-bg">
+    <div className="p-4 md:p-8 h-full overflow-y-auto bg-primary-bg">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-primary-headline mb-3">
+        <h1 className="text-3xl md:text-4xl font-bold text-primary-headline mb-3">
           Dashboard
         </h1>
       </div>
 
-      <div className="flex gap-4 mb-8">
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="flex items-center gap-2">
           <CalendarDays size={20} className="text-primary-headline" />
           <input
@@ -151,7 +147,7 @@ const Dashboard = ({
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-primary-main rounded-3xl p-6 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-primary-headline">
@@ -227,7 +223,6 @@ const Dashboard = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Best Selling Items */}
         <div className="bg-primary-main rounded-3xl p-6 shadow-xl">
           <h3 className="text-xl font-bold text-primary-headline mb-6">
             Món bán chạy nhất
@@ -260,7 +255,6 @@ const Dashboard = ({
           )}
         </div>
 
-        {/* Recent Orders */}
         <div className="bg-primary-main rounded-3xl p-6 shadow-xl">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-primary-headline">Đơn hàng</h3>
@@ -328,39 +322,11 @@ const Dashboard = ({
         </div>
       </div>
 
-      <div className="mt-8"> {/* Thẻ div mở cho Revenue Analytics */}
-        <div className="bg-primary-main rounded-3xl p-6 shadow-xl">
-          <h3 className="text-xl font-bold text-primary-headline mb-6">Phân tích doanh thu</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-center justify-between p-4 rounded-xl">
-              <div className="flex items-center gap-3">
-                <Banknote size={20} className="text-primary-button" />
-                <span className="font-medium text-primary-headline">Tiền mặt</span>
-              </div>
-              <span className="font-bold text-primary-button">{revenueData.cash.toLocaleString('vi-VN')}đ</span>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-primary-tertiary-light rounded-xl">
-              <div className="flex items-center gap-3">
-                <CreditCard size={20} className="text-primary-tertiary" />
-                <span className="font-medium text-primary-headline">Chuyển khoản</span>
-              </div>
-              <span className="font-bold text-primary-tertiary">{revenueData.transfer.toLocaleString('vi-VN')}đ</span>
-            </div>
-          </div>
-          <div className="mt-6 pt-6 border-t border-primary-stroke">
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-primary-headline">Tổng doanh thu</span>
-              <span className="text-2xl font-bold text-primary-headline">{(revenueData.cash + revenueData.transfer).toLocaleString('vi-VN')}đ</span>
-            </div>
-          </div>
-        </div>
-      </div> {/* Thẻ div đóng cho Revenue Analytics */}
-
       {showOrderDetails && selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-primary-main rounded-2xl p-6 m-4 w-full max-w-2xl shadow-2xl max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-primary-main rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-primary-headline">
+              <h3 className="text-xl md:text-2xl font-bold text-primary-headline">
                 Chi tiết đơn hàng {selectedOrder.id}
               </h3>
               <button
@@ -371,7 +337,7 @@ const Dashboard = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <h4 className="font-bold text-primary-headline mb-3">
                   Thông tin đơn hàng

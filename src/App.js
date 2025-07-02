@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
@@ -9,38 +8,58 @@ import useOrderManagement from './hooks/useOrderManagement';
 import useMenuData from './hooks/useMenuData';
 import useDashboardData from './hooks/useDashboardData';
 import usePrinting from './hooks/usePrinting';
+import useTheme from './hooks/useTheme';
+import useDiscountSettings from './hooks/useDiscountSettings';
+import useBankSettings from './hooks/useBankSettings';
+import useBankList from './hooks/useBankList';
+import useStaffManagement from './hooks/useStaffManagement';
 
 // Import components
 import LoginPage from './components/auth/LoginPage';
+import StaffPinLoginPage from './components/auth/StaffPinLoginPage';
 import AdminPage from './admin/AdminPage';
 import Sidebar from './components/common/Sidebar';
+import MobileHeader from './components/common/MobileHeader';
 import TableGrid from './components/tables/TableGrid';
 import MenuSection from './components/menu/MenuSection';
 import Dashboard from './components/dashboard/Dashboard';
+import CashierExpenses from './cashier/CashierExpenses';
 import OrderPanel from './components/order/OrderPanel';
 import ChangeTableDialog from './components/order/ChangeTableDialog';
-import { X, UtensilsCrossed } from 'lucide-react';
+import { X, UtensilsCrossed, AlertCircle } from 'lucide-react';
 
-// Import data (only for initialSettings, as MOCK_ORDERS_BY_DATE is now from useDashboardData)
-// Note: MOCK_ORDERS_BY_DATE is still imported in useDashboardData.js
-import { MENU_ITEMS, CATEGORIES, MENU_TYPES } from './data/mockData';
+// Import data
+import { MOCK_ORDERS_BY_DATE } from './data/mockData';
 
 function App() {
-  // Global state for active UI section (controlled by Sidebar)
   const [activeSection, setActiveSection] = useState('tables');
-  const [adminSection, setAdminSection] = useState('dashboard'); // State specific to AdminPage
+  const [adminSection, setAdminSection] = useState('dashboard');
+  const [notifications, setNotifications] = useState([]);
 
-  // --- Sử dụng các Custom Hooks ---
-  const {
-    tables, setTables, addTable, updateTable, deleteTable
-  } = useTableManagement();
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileOrderPanelOpen, setIsMobileOrderPanelOpen] = useState(false);
 
+  const { theme, setTheme } = useTheme();
+  const { quickDiscountOptions, addDiscountOption, updateDiscountOption, deleteDiscountOption } = useDiscountSettings();
+  const { bankSettings, setBankSettings } = useBankSettings();
+  const { banks, loading: bankListLoading } = useBankList();
+  const { staffList, addStaff, updateStaff, deleteStaff } = useStaffManagement();
+
+  const { tables, setTables, addTable, updateTable, deleteTable } = useTableManagement();
   const {
-    menuItems, menuTypes, setMenuTypes, categories,
+    menuItems, setMenuItems, menuTypes, setMenuTypes, categories,
     addMenuType, deleteMenuType, addMenuItem, updateMenuItem, deleteMenuItem,
+    updateItemInventory,
     addCategory, updateCategory, deleteCategory,
     searchTerm, setSearchTerm, selectedCategory, setSelectedCategory, selectedMenuType, setSelectedMenuType,
   } = useMenuData();
+
+  const addNotification = (notification) => {
+    setNotifications(prev => [notification, ...prev].filter((v,i,a)=>a.findIndex(t=>(t.id === v.id))===i));
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== notification.id));
+    }, 5000);
+  };
 
   const {
     selectedTable, setSelectedTable, orders, setOrders,
@@ -51,179 +70,275 @@ function App() {
     autoOpenMenu, handleAutoOpenMenuToggle,
     addToOrder, updateQuantity, clearTable,
     handleNoteSubmit, openTableNoteDialog, openItemNoteDialog, handleChangeTable,
-  } = useOrderManagement(tables, menuItems);
+  } = useOrderManagement(tables, menuItems, addNotification);
 
-  // Updated to receive new states/functions from useDashboardData
+  const {
+    authLevel,
+    loggedInStaff,
+    loginEmail,
+    setLoginEmail,
+    loginPassword,
+    setLoginPassword,
+    handleLogin,
+    handleAdminLogin,
+    handleStaffLogin,
+    handleStaffLogout,
+    handleBusinessLogout,
+  } = useAuth(staffList, (isAdminFlag) => {
+    setActiveSection('tables');
+    if (isAdminFlag) setAdminSection('dashboard');
+  }, () => {
+    setActiveSection('tables');
+    setAdminSection('dashboard');
+    setSelectedTable(null);
+    setOrders({});
+    setTableNotes({});
+    setItemNotes({});
+  });
+
   const {
     selectedDate, setSelectedDate, paymentFilter, setPaymentFilter,
-    dateRange, setDateRange, aggregatedOrdersForDisplay, MOCK_ORDERS_BY_DATE
+    dateRange, setDateRange, aggregatedOrdersForDisplay,
+    expenses, addExpense,
   } = useDashboardData();
 
   const { triggerPrint, initialSettings } = usePrinting(orders, selectedTable, tables);
 
-  // --- Auth Hook (đã có từ trước) ---
-  const {
-    isLoggedIn, showLoginPage, loginEmail, setLoginEmail, loginPassword,
-    setLoginPassword, isAdmin, handleLogin, handleAdminLogin, handleLogout
-  } = useAuth(
-    () => {
-      // Callback khi login thành công
-      setActiveSection('tables'); // Về trang chính
-      setAdminSection('dashboard'); // Đảm bảo admin dash là mặc định
-    },
-    () => {
-      // Callback khi logout
-      setSelectedTable(null); // Reset table selection
-      setOrders({}); // Clear all orders
-      setTableNotes({}); // Clear all table notes
-      setItemNotes({}); // Clear all item notes
-      setActiveSection('tables'); // Về trang login/mặc định
-      setAdminSection('dashboard'); // Reset admin section
-    }
-  );
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
-  // --- Additional Logic / Effects ---
-  // Effect để tự động mở menu khi chọn bàn và autoOpenMenu bật
   useEffect(() => {
     if (selectedTable && autoOpenMenu) {
       setActiveSection('menu');
     }
   }, [selectedTable, autoOpenMenu, setActiveSection]);
 
-
-  // --- Helper function for Payment processing that interacts with OrderManagement ---
   const processPaymentAndOrders = (paymentData, type = 'full') => {
     if (type === 'full') {
-      triggerPrint('provisional'); // Call printing logic
-      clearTable(); // Clear table after full payment (from useOrderManagement)
+      triggerPrint('provisional');
+      clearTable();
     } else if (type === 'partial') {
-      // This is partial payment logic, which modifies the order directly
       const currentOrder = [...(orders[selectedTable] || [])];
       const updatedOrder = currentOrder.map((orderItem) => {
         const paidItem = paymentData.paidItems.find((p) => p.id === orderItem.id);
         if (paidItem) { return { ...orderItem, quantity: orderItem.quantity - paidItem.quantity }; }
         return orderItem;
       }).filter((item) => item.quantity > 0);
-      setOrders({ ...orders, [selectedTable]: updatedOrder }); // Update orders (from useOrderManagement)
+      setOrders({ ...orders, [selectedTable]: updatedOrder });
     }
   };
 
+  const renderContent = () => {
+    switch (authLevel) {
+      case 'admin_auth':
+        return (
+          <AdminPage
+            adminSection={adminSection}
+            setAdminSection={setAdminSection}
+            handleLogout={handleBusinessLogout}
+            staffList={staffList}
+            addStaff={addStaff}
+            updateStaff={updateStaff}
+            deleteStaff={deleteStaff}
+            MOCK_ORDERS_BY_DATE={MOCK_ORDERS_BY_DATE}
+            menuTypes={menuTypes}
+            setMenuTypes={setMenuTypes}
+            addMenuType={addMenuType}
+            deleteMenuType={deleteMenuType}
+            menuItems={menuItems}
+            addMenuItem={addMenuItem}
+            updateMenuItem={updateMenuItem}
+            deleteMenuItem={deleteMenuItem}
+            updateItemInventory={updateItemInventory}
+            categories={categories}
+            addCategory={addCategory}
+            updateCategory={updateCategory}
+            deleteCategory={deleteCategory}
+            orders={orders}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            paymentFilter={paymentFilter}
+            setPaymentFilter={setPaymentFilter}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            aggregatedOrdersForDisplay={aggregatedOrdersForDisplay}
+            tables={tables}
+            setTables={setTables}
+            addTable={addTable}
+            updateTable={updateTable}
+            deleteTable={deleteTable}
+            initialSettings={initialSettings}
+            expenses={expenses}
+            addExpense={addExpense}
+            currentTheme={theme}
+            onThemeChange={setTheme}
+            quickDiscountOptions={quickDiscountOptions}
+            addDiscountOption={addDiscountOption}
+            updateDiscountOption={updateDiscountOption}
+            deleteDiscountOption={deleteDiscountOption}
+            bankSettings={bankSettings}
+            setBankSettings={setBankSettings}
+            bankList={banks}
+            bankListLoading={bankListLoading}
+          />
+        );
 
-  // --- Render UI ---
-  if (showLoginPage && !isLoggedIn) {
-    return (
-      <LoginPage
-        loginEmail={loginEmail}
-        setLoginEmail={setLoginEmail}
-        loginPassword={loginPassword}
-        setLoginPassword={setLoginPassword}
-        handleLogin={handleLogin}
-        handleAdminLogin={handleAdminLogin}
-      />
-    );
-  }
+      case 'staff_auth':
+        const currentOrderItems = orders[selectedTable] || [];
+        const orderItemCount = currentOrderItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  if (isAdmin) {
-    return (
-      <AdminPage
-        adminSection={adminSection}
-        setAdminSection={setAdminSection}
-        handleLogout={handleLogout}
-        // Menu Data props
-        menuTypes={menuTypes}
-        setMenuTypes={setMenuTypes}
-        addMenuType={addMenuType}
-        deleteMenuType={deleteMenuType}
-        menuItems={menuItems}
-        addMenuItem={addMenuItem}
-        updateMenuItem={updateMenuItem}
-        deleteMenuItem={deleteMenuItem}
-        categories={categories}
-        addCategory={addCategory}
-        updateCategory={updateCategory}
-        deleteCategory={deleteCategory}
-        // Dashboard Data props (new props passed)
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        paymentFilter={paymentFilter}
-        setPaymentFilter={setPaymentFilter}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        aggregatedOrdersForDisplay={aggregatedOrdersForDisplay}
-        MOCK_ORDERS_BY_DATE={MOCK_ORDERS_BY_DATE} // Only needed if raw MOCK_ORDERS_BY_DATE is explicitly used in AdminDashboard
-        // Table Data props
-        tables={tables}
-        setTables={setTables}
-        addTable={addTable}
-        updateTable={updateTable}
-        deleteTable={deleteTable}
-        // Print Settings (initialSettings for AdminPrintSettings component)
-        initialSettings={initialSettings}
-      />
-    );
-  }
+        return (
+            <div className="h-screen bg-primary-bg flex flex-col md:flex-row md:overflow-hidden">
+                <MobileHeader 
+                    onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+                    onToggleOrderPanel={() => setIsMobileOrderPanelOpen(!isMobileOrderPanelOpen)}
+                    orderItemCount={orderItemCount}
+                    activeSection={activeSection}
+                    setActiveSection={setActiveSection}
+                />
+                
+                {(isMobileSidebarOpen || isMobileOrderPanelOpen) && <div onClick={() => { setIsMobileSidebarOpen(false); setIsMobileOrderPanelOpen(false); }} className="fixed inset-0 bg-black/50 z-20 md:hidden"></div>}
 
+                <div className={`fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                    <Sidebar 
+                        activeSection={activeSection} 
+                        setActiveSection={setActiveSection} 
+                        handleStaffLogout={handleStaffLogout}
+                        handleBusinessLogout={handleBusinessLogout}
+                        loggedInStaff={loggedInStaff}
+                        onItemClick={() => setIsMobileSidebarOpen(false)}
+                    />
+                </div>
+
+                <div className="flex-1 flex overflow-hidden">
+                    <div className="flex-1 overflow-y-auto">
+                        {activeSection === 'tables' && (
+                            <TableGrid
+                                tables={tables}
+                                selectedTable={selectedTable}
+                                setSelectedTable={setSelectedTable}
+                                orders={orders}
+                                tableFilter={tableFilter}
+                                setTableFilter={setTableFilter}
+                                recentItems={recentItems}
+                                menuItems={menuItems}
+                                addToOrder={addToOrder}
+                                autoOpenMenu={autoOpenMenu}
+                                handleAutoOpenMenuToggle={handleAutoOpenMenuToggle}
+                            />
+                        )}
+                        {activeSection === 'menu' && (
+                            <MenuSection
+                                selectedTable={selectedTable}
+                                searchTerm={searchTerm}
+                                setSearchTerm={setSearchTerm}
+                                selectedCategory={selectedCategory}
+                                setSelectedCategory={setSelectedCategory}
+                                selectedMenuType={selectedMenuType}
+                                setSelectedMenuType={setSelectedMenuType}
+                                menuItems={menuItems}
+                                menuTypes={menuTypes}
+                                categories={categories}
+                                addToOrder={addToOrder}
+                                orders={orders}
+                            />
+                        )}
+                        {activeSection === 'dashboard' && (
+                            <Dashboard
+                                selectedDate={selectedDate}
+                                setSelectedDate={setSelectedDate}
+                                paymentFilter={paymentFilter}
+                                setPaymentFilter={setPaymentFilter}
+                                dateRange={dateRange}
+                                setDateRange={setDateRange}
+                                aggregatedOrdersForDisplay={aggregatedOrdersForDisplay}
+                            />
+                        )}
+                        {activeSection === 'expenses' && (
+                            <CashierExpenses expenses={expenses} addExpense={addExpense} />
+                        )}
+                    </div>
+
+                    <div className="hidden md:flex">
+                        <OrderPanel
+                            selectedTable={selectedTable}
+                            orders={orders}
+                            itemNotes={itemNotes}
+                            tableNotes={tableNotes}
+                            updateQuantity={updateQuantity}
+                            clearTable={clearTable}
+                            processPayment={processPaymentAndOrders}
+                            openTableNoteDialog={openTableNoteDialog}
+                            openItemNoteDialog={openItemNoteDialog}
+                            openChangeTableDialog={() => setShowChangeTableDialog(true)}
+                            handlePrint={triggerPrint}
+                            quickDiscountOptions={quickDiscountOptions}
+                            bankSettings={bankSettings}
+                            banks={banks}
+                        />
+                    </div>
+                </div>
+
+                <div className={`fixed inset-y-0 right-0 z-30 w-full max-w-sm transform transition-transform duration-300 ease-in-out md:hidden ${isMobileOrderPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                    <OrderPanel
+                        selectedTable={selectedTable}
+                        orders={orders}
+                        itemNotes={itemNotes}
+                        tableNotes={tableNotes}
+                        updateQuantity={updateQuantity}
+                        clearTable={clearTable}
+                        processPayment={processPaymentAndOrders}
+                        openTableNoteDialog={openTableNoteDialog}
+                        openItemNoteDialog={openItemNoteDialog}
+                        openChangeTableDialog={() => setShowChangeTableDialog(true)}
+                        handlePrint={triggerPrint}
+                        quickDiscountOptions={quickDiscountOptions}
+                        bankSettings={bankSettings}
+                        banks={banks}
+                    />
+                </div>
+            </div>
+        );
+
+      case 'business_auth':
+        return (
+          <StaffPinLoginPage
+            staffList={staffList}
+            handleStaffLogin={handleStaffLogin}
+            handleBusinessLogout={handleBusinessLogout}
+          />
+        );
+
+      case 'logged_out':
+      default:
+        return (
+          <LoginPage
+            loginEmail={loginEmail}
+            setLoginEmail={setLoginEmail}
+            loginPassword={loginPassword}
+            setLoginPassword={setLoginPassword}
+            handleLogin={handleLogin}
+            handleAdminLogin={handleAdminLogin}
+          />
+        );
+    }
+  };
+  
   return (
-    <div className="h-screen bg-primary-bg flex overflow-hidden">
-      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} handleLogout={handleLogout} />
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-hidden">
-          {activeSection === 'tables' && (
-            <TableGrid
-              tables={tables}
-              selectedTable={selectedTable}
-              setSelectedTable={setSelectedTable}
-              orders={orders}
-              tableFilter={tableFilter}
-              setTableFilter={setTableFilter}
-              recentItems={recentItems}
-              menuItems={menuItems}
-              addToOrder={addToOrder}
-              autoOpenMenu={autoOpenMenu}
-              handleAutoOpenMenuToggle={handleAutoOpenMenuToggle}
-            />
-          )}
-          {activeSection === 'menu' && (
-            <MenuSection
-              selectedTable={selectedTable}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedMenuType={selectedMenuType}
-              setSelectedMenuType={setSelectedMenuType}
-              menuItems={menuItems}
-              menuTypes={menuTypes}
-              categories={categories}
-              addToOrder={addToOrder}
-            />
-          )}
-          {activeSection === 'dashboard' && (
-            <Dashboard
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              paymentFilter={paymentFilter}
-              setPaymentFilter={setPaymentFilter}
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-              aggregatedOrdersForDisplay={aggregatedOrdersForDisplay}
-            />
-          )}
-        </div>
-        <OrderPanel
-          selectedTable={selectedTable}
-          orders={orders}
-          itemNotes={itemNotes}
-          tableNotes={tableNotes}
-          updateQuantity={updateQuantity}
-          clearTable={clearTable}
-          processPayment={processPaymentAndOrders}
-          openTableNoteDialog={openTableNoteDialog}
-          openItemNoteDialog={openItemNoteDialog}
-          openChangeTableDialog={() => setShowChangeTableDialog(true)}
-          handlePrint={triggerPrint}
-        />
+    <>
+      {renderContent()}
+      
+      <div className="absolute top-4 right-4 space-y-3 z-50">
+        {notifications.map(n => (
+          <div key={n.id} className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 rounded-lg shadow-lg flex items-center gap-3">
+            <AlertCircle />
+            <p>{n.message}</p>
+            <button onClick={() => removeNotification(n.id)} className="ml-auto"><X size={18} /></button>
+          </div>
+        ))}
       </div>
+
       {showNoteDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-primary-main rounded-2xl p-6 m-4 w-full max-w-md shadow-2xl">
@@ -262,7 +377,7 @@ function App() {
           onTableSelect={handleChangeTable}
         />
       )}
-    </div>
+    </>
   );
 }
 

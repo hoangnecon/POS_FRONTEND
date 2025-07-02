@@ -1,14 +1,20 @@
 // src/hooks/useMenuData.js
 import { useState } from 'react';
 import { UtensilsCrossed } from 'lucide-react';
-import { MENU_ITEMS, CATEGORIES, MENU_TYPES } from '../data/mockData'; // Import initial data
+import { MENU_ITEMS, CATEGORIES, MENU_TYPES } from '../data/mockData';
 
 const useMenuData = () => {
-  const [menuItems, setMenuItems] = useState(MENU_ITEMS);
+  const [menuItems, setMenuItems] = useState(() =>
+    MENU_ITEMS.map(item => ({
+      ...item,
+      inventoryEnabled: false,
+      inventoryCount: 0,
+      costPrice: 0, // Add costPrice
+    }))
+  );
   const [menuTypes, setMenuTypes] = useState(MENU_TYPES);
   const [categories, setCategories] = useState(CATEGORIES);
 
-  // Thêm các state liên quan đến tìm kiếm và lọc menu
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedMenuType, setSelectedMenuType] = useState('regular');
@@ -20,11 +26,17 @@ const useMenuData = () => {
 
   const deleteMenuType = (menuTypeId) => {
     setMenuTypes(menuTypes.filter((menu) => menu.id !== menuTypeId));
-    setMenuItems(menuItems.filter((item) => item.menuType !== menuTypeId)); // Remove items of deleted menu type
+    setMenuItems(menuItems.filter((item) => item.menuType !== menuTypeId));
   };
 
   const addMenuItem = (itemData) => {
-    const newItem = { ...itemData, id: Math.max(0, ...menuItems.map((item) => item.id)) + 1, };
+    const newItem = {
+      ...itemData,
+      id: Math.max(0, ...menuItems.map((item) => item.id)) + 1,
+      inventoryEnabled: false,
+      inventoryCount: 0,
+      costPrice: 0, // Ensure new items have a default costPrice
+    };
     setMenuItems([...menuItems, newItem]);
   };
 
@@ -34,6 +46,12 @@ const useMenuData = () => {
 
   const deleteMenuItem = (itemId) => {
     setMenuItems(menuItems.filter((item) => item.id !== itemId));
+  };
+  
+  const updateItemInventory = (itemId, inventoryData) => {
+    setMenuItems(prevItems =>
+      prevItems.map(item => (item.id === itemId ? { ...item, ...inventoryData } : item))
+    );
   };
 
   const addCategory = (name) => {
@@ -52,14 +70,14 @@ const useMenuData = () => {
     const categoryToDelete = categories.find(cat => cat.id === categoryId);
     if (!categoryToDelete) return;
     setCategories(categories.filter(cat => cat.id !== categoryId));
-    setMenuItems(menuItems.map(item => item.category === categoryToDelete.name ? { ...item, category: 'Khác' } : item)); // Assign items to a default category
+    setMenuItems(menuItems.map(item => item.category === categoryToDelete.name ? { ...item, category: 'Khác' } : item));
   };
 
   return {
     menuItems,
     setMenuItems,
     menuTypes,
-    setMenuTypes, // <--- Đã thêm vào đây
+    setMenuTypes,
     categories,
     setCategories,
     addMenuType,
@@ -67,10 +85,10 @@ const useMenuData = () => {
     addMenuItem,
     updateMenuItem,
     deleteMenuItem,
+    updateItemInventory,
     addCategory,
     updateCategory,
     deleteCategory,
-    // Trả về các state và setter mới
     searchTerm,
     setSearchTerm,
     selectedCategory,

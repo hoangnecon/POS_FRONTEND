@@ -1,6 +1,6 @@
 // src/hooks/useDashboardData.js
 import { useState, useMemo } from 'react';
-import { MOCK_ORDERS_BY_DATE } from '../data/mockData';
+import { MOCK_ORDERS_BY_DATE, MOCK_EXPENSES_BY_DATE } from '../data/mockData';
 
 // Helper function to get dates within a range (YYYY-MM-DD format)
 const getDatesInDateRange = (startDateStr, rangeType) => {
@@ -31,7 +31,20 @@ const getDatesInDateRange = (startDateStr, rangeType) => {
 const useDashboardData = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentFilter, setPaymentFilter] = useState('all');
-  const [dateRange, setDateRange] = useState('day'); // New state for date range
+  const [dateRange, setDateRange] = useState('day');
+  const [expenses, setExpenses] = useState(MOCK_EXPENSES_BY_DATE);
+
+  const addExpense = (expense) => {
+    const { date } = expense;
+    setExpenses(prev => {
+      const updatedExpenses = { ...prev };
+      if (!updatedExpenses[date]) {
+        updatedExpenses[date] = [];
+      }
+      updatedExpenses[date].push(expense);
+      return updatedExpenses;
+    });
+  };
 
   // Memoize aggregated orders based on selectedDate and dateRange
   const aggregatedOrdersForDisplay = useMemo(() => {
@@ -50,10 +63,12 @@ const useDashboardData = () => {
     setSelectedDate,
     paymentFilter,
     setPaymentFilter,
-    MOCK_ORDERS_BY_DATE, // This is static, but can be managed by state if dynamic data fetching is implemented
-    dateRange, // New return value
-    setDateRange, // New return value
-    aggregatedOrdersForDisplay, // New aggregated data
+    MOCK_ORDERS_BY_DATE,
+    dateRange,
+    setDateRange,
+    aggregatedOrdersForDisplay,
+    expenses,
+    addExpense,
   };
 };
 

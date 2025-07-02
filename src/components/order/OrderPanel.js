@@ -1,5 +1,3 @@
-// src/components/order/OrderPanel.js
-
 import React, { useState, useMemo } from 'react';
 import {
   ShoppingCart,
@@ -17,18 +15,25 @@ import {
   CreditCard,
   Split,
   Printer,
+  QrCode,
+  Combine,
 } from 'lucide-react';
+import QRCodeDialog from './QRCodeDialog';
 
 const PartialPaymentDialog = ({
     setShowPartialPaymentDialog,
     orderItems,
     onProcessPartialPayment,
+    quickDiscountOptions,
+    bankSettings, // Thêm prop
+    banks, // Thêm prop
   }) => {
     const [selectedItems, setSelectedItems] = useState({});
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [discountType, setDiscountType] = useState('none');
     const [discountValue, setDiscountValue] = useState(0);
-  
+    const [showQRCodeDialog, setShowQRCodeDialog] = useState(false); // Thêm state
+
     const handleQuantityChange = (item, change) => {
       const currentSelectedQuantity = selectedItems[item.id]?.quantity || 0;
       const originalQuantity = item.quantity;
@@ -80,27 +85,21 @@ const PartialPaymentDialog = ({
       };
       onProcessPartialPayment(paymentData);
     };
-  
-    const quickDiscountOptions = [
-      { type: 'percent', value: 10, label: '10%' },
-      { type: 'percent', value: 20, label: '20%' },
-      { type: 'amount', value: 50000, label: '50k' },
-      { type: 'amount', value: 100000, label: '100k' },
-    ];
-  
+    
     return (
+    <>
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-        <div className="bg-primary-main rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
-          <div className="p-6 border-b flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-primary-headline">Thanh toán một phần</h2>
+        <div className="bg-primary-main rounded-2xl w-full max-w-lg max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
+          <div className="p-4 md:p-6 border-b flex items-center justify-between">
+              <h2 className="text-xl md:text-2xl font-bold text-primary-headline">Thanh toán một phần</h2>
               <button onClick={() => setShowPartialPaymentDialog(false)} className="p-2 rounded-full hover:bg-gray-200">
                   <X size={24} />
               </button>
           </div>
   
-          <div className="flex-1 p-6 grid grid-cols-2 gap-6 overflow-y-auto">
+          <div className="flex-1 p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
             <div>
-              <h3 className="text-lg font-bold text-primary-headline mb-4">Chọn số lượng món cần thanh toán</h3>
+              <h3 className="text-lg font-bold text-primary-headline mb-4">Chọn món thanh toán</h3>
               <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">
                 {orderItems.map((item) => (
                   <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-primary-secondary">
@@ -118,20 +117,20 @@ const PartialPaymentDialog = ({
               </div>
             </div>
   
-            <div>
+            <div className="mt-4 md:mt-0">
               <h3 className="text-lg font-bold text-primary-headline mb-4">Tổng kết</h3>
               <div className="mb-4">
                 <h4 className="font-medium text-primary-paragraph mb-2">Phương thức</h4>
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => setPaymentMethod('cash')} className={`p-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${paymentMethod === 'cash' ? 'bg-primary-button text-white' : 'bg-gray-200'}`}><Banknote size={18} /> Tiền mặt</button>
-                  <button onClick={() => setPaymentMethod('transfer')} className={`p-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${paymentMethod === 'transfer' ? 'bg-primary-button text-white' : 'bg-gray-200'}`}><CreditCard size={18} /> Chuyển khoản</button>
+                  <button onClick={() => { setPaymentMethod('transfer'); setShowQRCodeDialog(true); }} className={`p-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${paymentMethod === 'transfer' ? 'bg-primary-button text-white' : 'bg-gray-200'}`}><QrCode size={18} /> Chuyển khoản</button>
                 </div>
               </div>
               <div className="mb-4">
                 <h4 className="font-medium text-primary-paragraph mb-2">Giảm giá nhanh</h4>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {quickDiscountOptions.map(opt => (
-                    <button key={opt.label} onClick={() => { setDiscountType(opt.type); setDiscountValue(opt.value); }} className={`p-2 rounded-lg font-semibold ${discountType === opt.type && discountValue === opt.value ? 'bg-primary-button text-white' : 'bg-gray-200'}`}>{opt.label}</button>
+                    <button key={opt.id} onClick={() => { setDiscountType(opt.type); setDiscountValue(opt.value); }} className={`p-2 rounded-lg font-semibold ${discountType === opt.type && discountValue === opt.value ? 'bg-primary-button text-white' : 'bg-gray-200'}`}>{opt.label}</button>
                   ))}
                 </div>
               </div>
@@ -145,12 +144,22 @@ const PartialPaymentDialog = ({
             </div>
           </div>
   
-          <div className="p-6 border-t flex justify-end gap-3">
+          <div className="p-4 md:p-6 border-t flex flex-col md:flex-row justify-end gap-3">
             <button onClick={() => setShowPartialPaymentDialog(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-200 text-gray-800 hover:bg-gray-300">Hủy</button>
-            <button onClick={handleProcessPayment} disabled={finalAmount <= 0} className="px-6 py-3 rounded-xl font-bold bg-primary-button text-white hover:bg-primary-highlight disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"><Check size={20} /> Thanh toán</button>
+            <button onClick={handleProcessPayment} disabled={finalAmount <= 0} className="px-6 py-3 rounded-xl font-bold bg-primary-button text-white hover:bg-primary-highlight disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"><Check size={20} /> Thanh toán</button>
           </div>
         </div>
       </div>
+       {showQRCodeDialog && (
+          <QRCodeDialog
+            bankSettings={bankSettings}
+            amount={finalAmount}
+            description={`Thanh toan mot phan`}
+            onClose={() => setShowQRCodeDialog(false)}
+            banks={banks}
+          />
+        )}
+    </>
     );
 };
   
@@ -162,10 +171,14 @@ const PaymentDialog = ({
     getTotalAmount,
     processPayment,
     handlePrint,
+    quickDiscountOptions,
+    bankSettings,
+    banks,
   }) => {
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [discountType, setDiscountType] = useState('none');
     const [discountValue, setDiscountValue] = useState(0);
+    const [showQRCodeDialog, setShowQRCodeDialog] = useState(false);
   
     const subtotal = getTotalAmount();
   
@@ -191,21 +204,13 @@ const PaymentDialog = ({
     };
   
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-primary-main rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex overflow-hidden">
-          <div className="flex-1 p-8 overflow-y-auto">
-            <div className="flex items-center gap-4 mb-6">
-              <button onClick={() => setShowPaymentDialog(false)} className="w-12 h-12 bg-primary-secondary rounded-xl flex items-center justify-center hover:bg-primary-highlight transition-colors">
-                <ArrowLeft size={20} className="text-primary-button" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-primary-headline">Thanh toán</h1>
-                <p className="text-primary-paragraph">{selectedTable === 'takeaway' ? 'Đơn mang về' : `Bàn ${selectedTable}`}</p>
-              </div>
-            </div>
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-primary-headline mb-4">Chi tiết đơn hàng</h3>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+      <>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-primary-main rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col md:flex-row overflow-hidden">
+            <div className="hidden md:flex flex-1 p-8 flex-col overflow-y-auto">
+              <h1 className="text-2xl font-bold text-primary-headline mb-2">Chi tiết đơn hàng</h1>
+              <p className="text-primary-paragraph mb-6">{selectedTable === 'takeaway' ? 'Đơn mang về' : `Bàn ${selectedTable}`}</p>
+              <div className="space-y-3 flex-1 overflow-y-auto">
                 {getCurrentOrders().map((item) => (
                   <div key={item.id} className="flex items-center justify-between p-4 bg-primary-secondary rounded-xl shadow-md">
                     <div className="flex items-center gap-4">
@@ -214,7 +219,7 @@ const PaymentDialog = ({
                       </div>
                       <div>
                         <h4 className="font-bold text-primary-headline">{item.name}</h4>
-                        <p className="text-sm text-primary-paragraph">Số lượng: {item.quantity}</p>
+                        <p className="text-sm text-primary-paragraph">SL: {item.quantity}</p>
                         <p className="text-sm text-primary-button font-medium">{item.price.toLocaleString('vi-VN')}đ x {item.quantity}</p>
                       </div>
                     </div>
@@ -225,60 +230,77 @@ const PaymentDialog = ({
                 ))}
               </div>
             </div>
-          </div>
-  
-          <div className="w-96 bg-primary-secondary p-6 flex flex-col">
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-primary-headline mb-6">Tùy chọn thanh toán</h2>
-              <div className="mb-6">
-                <h3 className="text-lg font-medium text-primary-paragraph mb-3">Giảm giá</h3>
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <button onClick={() => setDiscountType('none')} className={`p-2 rounded-lg ${discountType === 'none' ? 'bg-primary-button text-white' : 'bg-white'}`}>Không</button>
-                  <button onClick={() => setDiscountType('percent')} className={`p-2 rounded-lg ${discountType === 'percent' ? 'bg-primary-button text-white' : 'bg-white'}`}>%</button>
-                  <button onClick={() => setDiscountType('amount')} className={`p-2 rounded-lg ${discountType === 'amount' ? 'bg-primary-button text-white' : 'bg-white'}`}>VND</button>
+    
+            <div className="w-full md:w-96 bg-primary-secondary p-4 md:p-6 flex flex-col">
+              <div className="flex-1">
+                <h2 className="text-lg md:text-xl font-bold text-primary-headline mb-6">Tùy chọn thanh toán</h2>
+                <div className="mb-4">
+                  <h3 className="text-base md:text-lg font-medium text-primary-paragraph mb-3">Giảm giá nhanh</h3>
+                  <div className="grid grid-cols-4 gap-2">
+                      {quickDiscountOptions.map(opt => (
+                          <button key={opt.id} onClick={() => { setDiscountType(opt.type); setDiscountValue(opt.value); }} className={`p-2 rounded-lg font-semibold ${discountType === opt.type && discountValue === opt.value ? 'bg-primary-button text-white' : 'bg-white'}`}>{opt.label}</button>
+                      ))}
+                  </div>
                 </div>
-                {discountType !== 'none' && (
-                  <input
-                    type="number"
-                    value={discountValue}
-                    onChange={(e) => setDiscountValue(Number(e.target.value))}
-                    placeholder={discountType === 'percent' ? 'Nhập %' : 'Nhập số tiền'}
-                    className="w-full p-3 bg-white rounded-xl focus:ring-2 focus:ring-primary-highlight"
-                  />
-                )}
+                <div className="mb-4">
+                  <h3 className="text-base md:text-lg font-medium text-primary-paragraph mb-3">Giảm giá thủ công</h3>
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <button onClick={() => setDiscountType('none')} className={`p-2 rounded-lg ${discountType === 'none' ? 'bg-primary-button text-white' : 'bg-white'}`}>Không</button>
+                    <button onClick={() => setDiscountType('percent')} className={`p-2 rounded-lg ${discountType === 'percent' ? 'bg-primary-button text-white' : 'bg-white'}`}>%</button>
+                    <button onClick={() => setDiscountType('amount')} className={`p-2 rounded-lg ${discountType === 'amount' ? 'bg-primary-button text-white' : 'bg-white'}`}>VND</button>
+                  </div>
+                  {discountType !== 'none' && (
+                    <input
+                      type="number"
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(Number(e.target.value))}
+                      placeholder={discountType === 'percent' ? 'Nhập %' : 'Nhập số tiền'}
+                      className="w-full p-3 bg-white rounded-xl focus:ring-2 focus:ring-primary-highlight"
+                    />
+                  )}
+                </div>
+                <div className="mb-6">
+                  <h3 className="text-base md:text-lg font-medium text-primary-paragraph mb-3">Phương thức</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => setPaymentMethod('cash')} className={`p-3 rounded-lg flex items-center justify-center gap-2 ${paymentMethod === 'cash' ? 'bg-primary-button text-white' : 'bg-white'}`}><Banknote size={20}/>Tiền mặt</button>
+                    <button onClick={() => { setPaymentMethod('transfer'); setShowQRCodeDialog(true); }} className={`p-3 rounded-lg flex items-center justify-center gap-2 ${paymentMethod === 'transfer' ? 'bg-primary-button text-white' : 'bg-white'}`}><QrCode size={20}/>Chuyển khoản</button>
+                  </div>
+                </div>
               </div>
-              <div className="mb-6">
-                <h3 className="text-lg font-medium text-primary-paragraph mb-3">Phương thức</h3>
+              <div className="space-y-3">
+                <div className="bg-white rounded-xl p-4 space-y-2">
+                  <div className="flex justify-between"><span>Tạm tính:</span> <span className="font-medium">{subtotal.toLocaleString('vi-VN')}đ</span></div>
+                  {discountAmount > 0 && <div className="flex justify-between text-red-600"><span>Giảm giá:</span> <span className="font-medium">-{discountAmount.toLocaleString('vi-VN')}đ</span></div>}
+                  <div className="border-t pt-2 mt-2">
+                    <div className="flex justify-between text-xl md:text-2xl font-bold"><span>Tổng cộng:</span> <span className="text-primary-button">{finalAmount.toLocaleString('vi-VN')}đ</span></div>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setPaymentMethod('cash')} className={`p-3 rounded-lg flex items-center justify-center gap-2 ${paymentMethod === 'cash' ? 'bg-primary-button text-white' : 'bg-white'}`}><Banknote size={20}/>Tiền mặt</button>
-                  <button onClick={() => setPaymentMethod('transfer')} className={`p-3 rounded-lg flex items-center justify-center gap-2 ${paymentMethod === 'transfer' ? 'bg-primary-button text-white' : 'bg-white'}`}><CreditCard size={20}/>Chuyển khoản</button>
+                  <button onClick={() => { setShowPaymentDialog(false); setShowPartialPaymentDialog(true); }} className="w-full bg-blue-100 text-blue-800 hover:bg-blue-200 py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Split size={20} />Một phần</button>
+                  <button onClick={handleProcessPayment} className="w-full bg-primary-button hover:bg-primary-highlight text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Check size={20}/>Hoàn tất</button>
                 </div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="bg-white rounded-xl p-4 space-y-2">
-                <div className="flex justify-between"><span>Tạm tính:</span> <span className="font-medium">{subtotal.toLocaleString('vi-VN')}đ</span></div>
-                {discountAmount > 0 && <div className="flex justify-between text-red-600"><span>Giảm giá:</span> <span className="font-medium">-{discountAmount.toLocaleString('vi-VN')}đ</span></div>}
-                <div className="border-t pt-2 mt-2">
-                  <div className="flex justify-between text-2xl font-bold"><span>Tổng cộng:</span> <span className="text-primary-button">{finalAmount.toLocaleString('vi-VN')}đ</span></div>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                    <button onClick={() => handlePrint('provisional')} className="w-full bg-gray-200 text-gray-800 hover:bg-gray-300 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                        <Printer size={20}/>In tạm tính
+                    </button>
+                    <button onClick={() => setShowPaymentDialog(false)} className="w-full bg-gray-200 text-gray-800 hover:bg-gray-300 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                        <ArrowLeft size={20}/>Quay lại
+                    </button>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => { setShowPaymentDialog(false); setShowPartialPaymentDialog(true); }} className="w-full bg-blue-100 text-blue-800 hover:bg-blue-200 py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Split size={20} />Một phần</button>
-                <button onClick={handleProcessPayment} className="w-full bg-primary-button hover:bg-primary-highlight text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Check size={20}/>Hoàn tất</button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                  <button onClick={() => handlePrint('provisional')} className="w-full bg-gray-200 text-gray-800 hover:bg-gray-300 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-                      <Printer size={20}/>In tạm tính
-                  </button>
-                  <button onClick={() => handlePrint('kitchen')} className="w-full bg-gray-200 text-gray-800 hover:bg-gray-300 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-                      <Printer size={20}/>In phiếu bếp
-                  </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
+        {showQRCodeDialog && (
+          <QRCodeDialog
+            bankSettings={bankSettings}
+            amount={finalAmount}
+            description={`Thanh toan don hang ban ${selectedTable}`}
+            onClose={() => setShowQRCodeDialog(false)}
+            banks={banks}
+          />
+        )}
+      </>
     );
   };
 
@@ -294,6 +316,9 @@ const OrderPanel = ({
     openTableNoteDialog,
     openChangeTableDialog,
     handlePrint,
+    quickDiscountOptions,
+    bankSettings,
+    banks,
   }) => {
     const [showClearDialog, setShowClearDialog] = useState(false);
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -317,14 +342,10 @@ const OrderPanel = ({
     const totalAmount = getTotalAmount();
   
     return (
-      <div className="w-96 bg-primary-main flex flex-col h-screen shadow-2xl">
+      <div className="w-full md:w-96 bg-primary-main flex flex-col h-screen shadow-2xl">
         <div className="p-6 bg-primary-main shadow-md">
           <div className="flex items-center justify-between mb-3">
-              <button
-                  onClick={openChangeTableDialog}
-                  disabled={!selectedTable}
-                  className="flex items-center gap-3 cursor-pointer disabled:cursor-not-allowed"
-              >
+              <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary-button rounded-xl flex items-center justify-center">
                   <span className="text-primary-main font-bold text-lg">
                       {selectedTable === 'takeaway' ? '📦' : selectedTable || '?'}
@@ -342,10 +363,7 @@ const OrderPanel = ({
                       : 'Đơn hàng tại bàn'}
                   </p>
                   </div>
-                  {selectedTable && (
-                  <Edit3 size={16} className="text-primary-paragraph ml-2" />
-                  )}
-              </button>
+              </div>
   
             {currentOrders.length > 0 && (
               <button
@@ -525,6 +543,13 @@ const OrderPanel = ({
   
             <div className="space-y-3">
               <button
+                onClick={openChangeTableDialog}
+                className="w-full bg-primary-secondary text-primary-headline py-3 rounded-xl font-bold text-base flex items-center justify-center gap-2 hover:bg-gray-300 transition-colors"
+              >
+                <Combine size={20}/>
+                Chuyển/Gộp Bàn
+              </button>
+              <button
                 className="w-full bg-primary-button hover:bg-primary-highlight text-primary-main py-3 rounded-xl font-bold text-lg transition-all shadow-lg"
                 onClick={() => setShowPaymentDialog(true)}
               >
@@ -577,6 +602,9 @@ const OrderPanel = ({
             getTotalAmount={getTotalAmount}
             processPayment={processPayment}
             handlePrint={handlePrint}
+            quickDiscountOptions={quickDiscountOptions}
+            bankSettings={bankSettings}
+            banks={banks}
           />
         )}
   
@@ -585,6 +613,9 @@ const OrderPanel = ({
             setShowPartialPaymentDialog={setShowPartialPaymentDialog}
             orderItems={currentOrders}
             onProcessPartialPayment={handleProcessPartialPayment}
+            quickDiscountOptions={quickDiscountOptions}
+            bankSettings={bankSettings}
+            banks={banks}
           />
         )}
       </div>

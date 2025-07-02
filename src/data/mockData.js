@@ -202,3 +202,13 @@ export const INITIAL_TABLES_DATA = [
   { id: 29, name: 'Bàn 29', isSpecial: false, icon: GalleryVertical },
   { id: 30, name: 'Bàn 30', isSpecial: false, icon: GalleryVertical },
 ];
+
+export const MOCK_EXPENSES_BY_DATE = {
+  '2024-01-15': [
+    { id: 'EXP001', name: 'Tiền điện', amount: 500000, date: '2024-01-15' },
+    { id: 'EXP002', name: 'Mua rau củ', amount: 250000, date: '2024-01-15' },
+  ],
+  '2024-01-14': [
+    { id: 'EXP003', name: 'Tiền nước', amount: 150000, date: '2024-01-14' },
+  ],
+};

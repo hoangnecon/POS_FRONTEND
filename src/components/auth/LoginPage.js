@@ -1,3 +1,4 @@
+// src/components/auth/LoginPage.js
 import React from 'react';
 import { Shield } from 'lucide-react';
 

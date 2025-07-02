@@ -1,7 +1,7 @@
 // src/hooks/useOrderManagement.js
 import { useState, useEffect } from 'react';
 
-const useOrderManagement = (tables, menuItems) => {
+const useOrderManagement = (tables, menuItems, addNotification) => {
   const [selectedTable, setSelectedTable] = useState(null);
   const [orders, setOrders] = useState({});
   const [recentItems, setRecentItems] = useState([1, 3, 4, 7, 8]); // Initial recent items
@@ -15,20 +15,76 @@ const useOrderManagement = (tables, menuItems) => {
   const [autoOpenMenu, setAutoOpenMenu] = useState(false);
   const [tableFilter, setTableFilter] = useState('all');
 
+  const getRemainingStock = (itemId, currentOrders) => {
+    const menuItem = menuItems.find(mi => mi.id === itemId);
+    if (!menuItem || !menuItem.inventoryEnabled) return Infinity;
+    
+    const inOrderCount = Object.values(currentOrders)
+      .flat()
+      .reduce((acc, orderItem) => (orderItem.id === itemId ? acc + orderItem.quantity : acc), 0);
+      
+    return menuItem.inventoryCount - inOrderCount;
+  };
+
   const addToOrder = (item) => {
     if (!selectedTable) return;
+
+    const remainingStock = getRemainingStock(item.id, orders);
+    if (remainingStock <= 0) {
+      alert(`Món "${item.name}" đã hết hàng.`);
+      return;
+    }
+
     const tableOrders = orders[selectedTable] || [];
     const existingItem = tableOrders.find((orderItem) => orderItem.id === item.id);
-    if (existingItem) {
-      setOrders({ ...orders, [selectedTable]: tableOrders.map((orderItem) => orderItem.id === item.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem), });
-    } else {
-      setOrders({ ...orders, [selectedTable]: [...tableOrders, { ...item, quantity: 1 }], });
+    const newQuantity = (existingItem ? existingItem.quantity : 0) + 1;
+
+    if (newQuantity > remainingStock) {
+      alert(`Không đủ số lượng "${item.name}" trong kho.`);
+      return;
     }
-    setRecentItems((prev) => { const filtered = prev.filter((id) => id !== item.id); return [item.id, ...filtered].slice(0, 8); });
+    
+    if (existingItem) {
+      setOrders({
+        ...orders,
+        [selectedTable]: tableOrders.map((orderItem) =>
+          orderItem.id === item.id
+            ? { ...orderItem, quantity: orderItem.quantity + 1 }
+            : orderItem
+        ),
+      });
+    } else {
+      setOrders({
+        ...orders,
+        [selectedTable]: [...tableOrders, { ...item, quantity: 1 }],
+      });
+    }
+    
+    if (addNotification && remainingStock - 1 <= 5 && remainingStock - 1 > 0) {
+      addNotification({
+        id: `low-stock-${item.id}-${Date.now()}`,
+        type: 'warning',
+        message: `Món "${item.name}" sắp hết hàng, chỉ còn ${remainingStock - 1} phần.`
+      });
+    }
+
+    setRecentItems((prev) => {
+      const filtered = prev.filter((id) => id !== item.id);
+      return [item.id, ...filtered].slice(0, 8);
+    });
   };
 
   const updateQuantity = (itemId, newQuantity) => {
     if (!selectedTable) return;
+  
+    const menuItem = menuItems.find(mi => mi.id === itemId);
+  
+    // Inventory Check
+    if (menuItem && menuItem.inventoryEnabled && newQuantity > menuItem.inventoryCount) {
+      alert(`Chỉ còn ${menuItem.inventoryCount} sản phẩm "${menuItem.name}" trong kho.`);
+      newQuantity = menuItem.inventoryCount;
+    }
+  
     if (newQuantity <= 0) {
       setOrders({ ...orders, [selectedTable]: (orders[selectedTable] || []).filter((item) => item.id !== itemId), });
       const itemKey = `${selectedTable}-${itemId}`;

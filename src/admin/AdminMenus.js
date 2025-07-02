@@ -1,218 +1,177 @@
-// src/admin/AdminMenus.js
 import React, { useState } from 'react';
-import { Plus, Edit3, Trash2, UtensilsCrossed } from 'lucide-react';
-import AdminTables from './AdminTables'; // Import AdminTables
+import { Plus, Edit3, Trash2 } from 'lucide-react';
 
-const AdminMenus = ({
-  menuTypes,
-  setMenuTypes,
-  menuItems, // Giữ lại nếu cần hiển thị thông tin món ăn liên quan đến loại món
-  addMenuType,
-  deleteMenuType,
-  categories,
-  addCategory,
-  updateCategory,
-  deleteCategory,
-  // Thêm props cho quản lý bàn
-  tables,
-  setTables,
-  addTable, // Mới
-  updateTable, // Mới
-  deleteTable, // Mới
-}) => {
-  const [showAddMenuTypeDialog, setShowAddMenuTypeDialog] = useState(false);
-  const [newMenuTypeName, setNewMenuTypeName] = useState('');
-  const [selectedMenuTypeEdit, setSelectedMenuTypeEdit] = useState(null);
-
-  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [selectedCategoryEdit, setSelectedCategoryEdit] = useState(null);
-
-  // Thêm state để quản lý tab đang hoạt động
-  const [activeTab, setActiveTab] = useState('menuAndCategory'); // 'menuAndCategory' hoặc 'tables'
-
-  const handleAddMenuType = () => {
-    if (newMenuTypeName.trim()) {
-      const newId = newMenuTypeName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-      if (menuTypes.some(type => type.id === newId)) {
-        alert("ID loại menu đã tồn tại hoặc tên không hợp lệ!");
-        return;
-      }
-      addMenuType(newId, newMenuTypeName);
-      setShowAddMenuTypeDialog(false);
-      setNewMenuTypeName('');
-    }
-  };
-
-  const handleUpdateMenuType = () => {
-    if (newMenuTypeName.trim() && selectedMenuTypeEdit) {
-      setMenuTypes(menuTypes.map(type =>
-        type.id === selectedMenuTypeEdit.id ? { ...type, name: newMenuTypeName } : type
-      ));
-      setShowAddMenuTypeDialog(false);
-      setSelectedMenuTypeEdit(null);
-      setNewMenuTypeName('');
-    }
-  };
-
-  const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
-      addCategory(newCategoryName);
-      setShowAddCategoryDialog(false);
-      setNewCategoryName('');
-    }
-  };
-
-  const handleUpdateCategory = () => {
-    if (newCategoryName.trim() && selectedCategoryEdit) {
-      updateCategory(selectedCategoryEdit.id, newCategoryName);
-      setShowAddCategoryDialog(false);
-      setSelectedCategoryEdit(null);
-      setNewCategoryName('');
+const CategoryDialog = ({ category, onSave, onClose }) => {
+  const [name, setName] = useState(category?.name || '');
+  const handleSave = () => {
+    if (name) {
+      onSave(name);
+      onClose();
     }
   };
 
   return (
-    <div className="p-8 h-full overflow-y-auto bg-primary-bg">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-primary-headline mb-3">Quản lý Menu & Bàn</h1>
-          <p className="text-primary-paragraph text-lg">Quản lý các loại menu, loại món và bàn trong hệ thống.</p>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-primary-main rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <h3 className="text-lg font-bold text-primary-headline mb-4">
+          {category ? 'Sửa Danh mục' : 'Thêm Danh mục'}
+        </h3>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên danh mục" className="w-full p-3 rounded-xl bg-primary-secondary" />
+        <div className="flex gap-3 mt-4">
+          <button onClick={handleSave} className="flex-1 bg-primary-button text-primary-main py-2 rounded-xl font-bold">Lưu</button>
+          <button onClick={onClose} className="flex-1 bg-primary-secondary text-primary-button py-2 rounded-xl font-bold">Hủy</button>
         </div>
       </div>
+    </div>
+  );
+};
 
-      {/* Tab Navigation với style mới và bỏ đường kẻ */}
-      <div className="flex gap-3 mb-8 pb-3"> {/* Đã bỏ 'border-b border-primary-secondary' */}
-        <button
-          onClick={() => setActiveTab('menuAndCategory')}
-          className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md ${
-            activeTab === 'menuAndCategory'
-              ? 'bg-primary-button text-primary-main shadow-lg'
-              : 'bg-primary-main text-primary-headline hover:bg-primary-highlight'
-          }`}
-        >
-          Quản lý Món & Loại món
-        </button>
-        <button
-          onClick={() => setActiveTab('tables')}
-          className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md ${
-            activeTab === 'tables'
-              ? 'bg-primary-button text-primary-main shadow-lg'
-              : 'bg-primary-main text-primary-headline hover:bg-primary-highlight'
-          }`}
-        >
-          Quản lý Bàn
-        </button>
+const MenuTypeDialog = ({ menuType, onSave, onClose }) => {
+  const [name, setName] = useState(menuType?.name || '');
+  const [id, setId] = useState(menuType?.id || '');
+
+  const handleSave = () => {
+    if (name && id) {
+      onSave(id, name);
+      onClose();
+    }
+  };
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-primary-main rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <h3 className="text-lg font-bold text-primary-headline mb-4">
+          {menuType ? 'Sửa Loại Menu' : 'Thêm Loại Menu'}
+        </h3>
+        <div className="space-y-4">
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên loại menu (ví dụ: Menu Tết)" className="w-full p-3 rounded-xl bg-primary-secondary" />
+          <input type="text" value={id} onChange={(e) => setId(e.target.value)} placeholder="ID loại menu (ví dụ: holiday)" className="w-full p-3 rounded-xl bg-primary-secondary" disabled={!!menuType} />
+        </div>
+        <div className="flex gap-3 mt-4">
+          <button onClick={handleSave} className="flex-1 bg-primary-button text-primary-main py-2 rounded-xl font-bold">Lưu</button>
+          <button onClick={onClose} className="flex-1 bg-primary-secondary text-primary-button py-2 rounded-xl font-bold">Hủy</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TableDialog = ({ table, onSave, onClose }) => {
+  const [name, setName] = useState(table?.name || '');
+  const handleSave = () => {
+    if (name) {
+      onSave({ ...table, name });
+      onClose();
+    }
+  };
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-primary-main rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <h3 className="text-lg font-bold text-primary-headline mb-4">{table ? 'Sửa Bàn' : 'Thêm Bàn'}</h3>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên bàn (ví dụ: Bàn 31)" className="w-full p-3 bg-primary-secondary rounded-xl" />
+        <div className="flex gap-3 mt-4">
+          <button onClick={handleSave} className="flex-1 bg-primary-button text-primary-main py-2 rounded-xl font-bold">Lưu</button>
+          <button onClick={onClose} className="flex-1 bg-primary-secondary text-primary-button py-2 rounded-xl font-bold">Hủy</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminMenus = ({
+  menuTypes, addMenuType, deleteMenuType,
+  categories, addCategory, updateCategory, deleteCategory,
+  tables, addTable, updateTable, deleteTable,
+}) => {
+  const [activeTab, setActiveTab] = useState('categories');
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [showMenuTypeDialog, setShowMenuTypeDialog] = useState(false);
+  const [showTableDialog, setShowTableDialog] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedMenuType, setSelectedMenuType] = useState(null);
+  const [selectedTable, setSelectedTable] = useState(null);
+
+  const handleOpenCategoryDialog = (category = null) => { setSelectedCategory(category); setShowCategoryDialog(true); };
+  const handleOpenMenuTypeDialog = (menuType = null) => { setSelectedMenuType(menuType); setShowMenuTypeDialog(true); };
+  const handleOpenTableDialog = (table = null) => { setSelectedTable(table); setShowTableDialog(true); };
+
+  return (
+    <div className="p-4 md:p-8 h-full flex flex-col bg-primary-bg">
+      {/* Header */}
+      <div className="flex-shrink-0">
+        <div className="flex flex-col md:flex-row justify-between md:items-center mb-8">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-primary-headline mb-3">Quản lý Menu & Bàn</h1>
+            <p className="text-primary-paragraph text-lg">Tùy chỉnh các loại menu, danh mục món ăn và sơ đồ bàn.</p>
+          </div>
+          <div className="mt-4 md:mt-0 self-start md:self-center">
+            {activeTab === 'categories' &&
+              <div className="flex gap-2">
+                <button onClick={() => handleOpenCategoryDialog()} className="bg-primary-button text-primary-main px-4 py-2 rounded-xl font-bold">Thêm Danh mục</button>
+                <button onClick={() => handleOpenMenuTypeDialog()} className="bg-primary-main text-primary-button px-4 py-2 rounded-xl font-bold">Thêm Loại Menu</button>
+              </div>
+            }
+            {activeTab === 'tables' &&
+              <button onClick={() => handleOpenTableDialog()} className="bg-primary-button text-primary-main px-4 py-2 rounded-xl font-bold">Thêm Bàn</button>
+            }
+          </div>
+        </div>
+        <div className="flex gap-3 mb-8">
+          <button onClick={() => setActiveTab('categories')} className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md ${activeTab === 'categories' ? 'bg-primary-button text-primary-main shadow-lg' : 'bg-primary-main text-primary-headline'}`}>Loại menu & Danh mục</button>
+          <button onClick={() => setActiveTab('tables')} className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md ${activeTab === 'tables' ? 'bg-primary-button text-primary-main shadow-lg' : 'bg-primary-main text-primary-headline'}`}>Quản lý Bàn</button>
+        </div>
+      </div>
+      
+      {/* Content Body */}
+      <div className="flex-1 overflow-y-auto pr-0 md:pr-4">
+        {activeTab === 'categories' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-primary-main rounded-2xl p-6 shadow-xl">
+              <h3 className="text-xl font-bold text-primary-headline mb-4">Danh mục món ăn</h3>
+              <div className="space-y-3">
+                {categories.map(cat => cat.id !== 'all' && cat.id !== 'popular' && (
+                  <div key={cat.id} className="flex justify-between items-center p-3 bg-primary-secondary rounded-lg">
+                    <span>{cat.name}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleOpenCategoryDialog(cat)} className="text-primary-button hover:bg-primary-button/10 rounded p-1 transition-colors"><Edit3 size={18} /></button>
+                      <button onClick={() => deleteCategory(cat.id)} className="text-primary-tertiary hover:bg-primary-tertiary/10 rounded p-1 transition-colors"><Trash2 size={18} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-primary-main rounded-2xl p-6 shadow-xl">
+              <h3 className="text-xl font-bold text-primary-headline mb-4">Loại menu</h3>
+              <div className="space-y-3">
+                {menuTypes.map(mt => (
+                  <div key={mt.id} className="flex justify-between items-center p-3 bg-primary-secondary rounded-lg">
+                    <span>{mt.name}</span>
+                    <button onClick={() => deleteMenuType(mt.id)} className="text-primary-tertiary hover:bg-primary-tertiary/10 rounded p-1 transition-colors"><Trash2 size={18} /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        {activeTab === 'tables' && (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+            {tables.map(table => (
+              <div key={table.id} className="relative bg-primary-main rounded-2xl p-4 shadow-xl flex flex-col items-center justify-center min-h-[120px]">
+                <span className="text-2xl font-bold text-primary-headline mb-2">{table.name}</span>
+                {!table.isSpecial && (
+                  <>
+                    <button onClick={() => handleOpenTableDialog(table)} className="absolute bottom-2 left-2 text-primary-button hover:bg-primary-button/10 rounded-full p-2 transition-colors"><Edit3 size={20} /></button>
+                    <button onClick={() => deleteTable(table.id)} className="absolute bottom-2 right-2 text-primary-tertiary hover:bg-primary-tertiary/10 rounded-full p-2 transition-colors"><Trash2 size={20} /></button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Conditional Rendering based on activeTab */}
-      {activeTab === 'menuAndCategory' && (
-        <>
-          {/* Quản lý Loại Menu */}
-          <div className="mb-12">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-primary-headline">Loại Menu</h2>
-              <button onClick={() => setShowAddMenuTypeDialog(true)} className="bg-primary-button text-primary-main px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-highlight transition-colors shadow-lg">
-                <Plus size={20} /> Thêm Loại Menu
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {menuTypes.map((type) => (
-                <div key={type.id} className="bg-primary-main rounded-3xl p-6 shadow-xl flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-primary-headline">{type.name}</h3>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setSelectedMenuTypeEdit(type); setNewMenuTypeName(type.name); setShowAddMenuTypeDialog(true); }} className="p-2 text-primary-button hover:bg-primary-secondary rounded-lg"><Edit3 size={16} /></button>
-                    <button onClick={() => deleteMenuType(type.id)} className="p-2 text-primary-tertiary hover:bg-red-100 rounded-lg"><Trash2 size={16} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quản lý Loại Món */}
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-primary-headline">Loại Món</h2>
-              <button onClick={() => setShowAddCategoryDialog(true)} className="bg-primary-button text-primary-main px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-highlight transition-colors shadow-lg">
-                <Plus size={20} /> Thêm Loại Món
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categories.map((category) => (
-                <div key={category.id} className="bg-primary-main rounded-3xl p-6 shadow-xl flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-primary-headline">{category.name}</h3>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setSelectedCategoryEdit(category); setNewCategoryName(category.name); setShowAddCategoryDialog(true); }} className="p-2 text-primary-button hover:bg-primary-secondary rounded-lg"><Edit3 size={16} /></button>
-                    <button onClick={() => deleteCategory(category.id)} className="p-2 text-primary-tertiary hover:bg-red-100 rounded-lg"><Trash2 size={16} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Dialog for Add/Edit Menu Type */}
-          {showAddMenuTypeDialog && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-primary-main rounded-2xl p-6 m-4 w-full max-w-md shadow-2xl">
-                <h3 className="text-lg font-bold text-primary-headline mb-4">
-                  {selectedMenuTypeEdit ? 'Sửa Loại Menu' : 'Thêm Loại Menu Mới'}
-                </h3>
-                <input
-                  type="text"
-                  value={newMenuTypeName}
-                  onChange={(e) => setNewMenuTypeName(e.target.value)}
-                  placeholder="Tên loại menu"
-                  className="w-full p-3 bg-primary-secondary rounded-xl text-primary-headline"
-                />
-                <div className="flex gap-3 mt-4">
-                  <button onClick={selectedMenuTypeEdit ? handleUpdateMenuType : handleAddMenuType} className="flex-1 bg-primary-button text-primary-main py-2 rounded-xl font-bold">
-                    {selectedMenuTypeEdit ? 'Cập nhật' : 'Thêm'}
-                  </button>
-                  <button onClick={() => { setShowAddMenuTypeDialog(false); setSelectedMenuTypeEdit(null); setNewMenuTypeName(''); }} className="flex-1 bg-primary-secondary text-primary-button py-2 rounded-xl font-bold">
-                    Hủy
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Dialog for Add/Edit Category */}
-          {showAddCategoryDialog && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-primary-main rounded-2xl p-6 m-4 w-full max-w-md shadow-2xl">
-                <h3 className="text-lg font-bold text-primary-headline mb-4">
-                  {selectedCategoryEdit ? 'Sửa Loại Món' : 'Thêm Loại Món Mới'}
-                </h3>
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="Tên loại món"
-                  className="w-full p-3 bg-primary-secondary rounded-xl text-primary-headline"
-                />
-                <div className="flex gap-3 mt-4">
-                  <button onClick={selectedCategoryEdit ? handleUpdateCategory : handleAddCategory} className="flex-1 bg-primary-button text-primary-main py-2 rounded-xl font-bold">
-                    {selectedCategoryEdit ? 'Cập nhật' : 'Thêm'}
-                  </button>
-                  <button onClick={() => { setShowAddCategoryDialog(false); setSelectedCategoryEdit(null); setNewCategoryName(''); }} className="flex-1 bg-primary-secondary text-primary-button py-2 rounded-xl font-bold">
-                    Hủy
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === 'tables' && (
-        <AdminTables
-          tables={tables}
-          setTables={setTables}
-          addTable={addTable} // Pass addTable from useTableManagement
-          updateTable={updateTable} // Pass updateTable from useTableManagement
-          deleteTable={deleteTable} // Pass deleteTable from useTableManagement
-        />
-      )}
+      {showCategoryDialog && <CategoryDialog category={selectedCategory} onSave={(name) => selectedCategory ? updateCategory(selectedCategory.id, name) : addCategory(name)} onClose={() => setShowCategoryDialog(false)} />}
+      {showMenuTypeDialog && <MenuTypeDialog menuType={selectedMenuType} onSave={addMenuType} onClose={() => setShowMenuTypeDialog(false)} />}
+      {showTableDialog && <TableDialog table={selectedTable} onSave={(tableData) => selectedTable ? updateTable(selectedTable.id, tableData) : addTable(tableData.name)} onClose={() => setShowTableDialog(false)} />}
     </div>
   );
 };
