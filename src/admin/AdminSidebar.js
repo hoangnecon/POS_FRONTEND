@@ -21,7 +21,7 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
           }`}
         >
           <BarChart3 size={22} />
-          {adminSection === 'dashboard' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />)}
+          {adminSection === 'dashboard' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />)}
         </button>
 
         <button
@@ -31,7 +31,7 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
           }`}
         >
           <TrendingUp size={22} />
-          {adminSection === 'staff_performance' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />)}
+          {adminSection === 'staff_performance' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />)}
         </button>
 
         <button
@@ -41,7 +41,7 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
           }`}
         >
           <TrendingDown size={22} />
-          {adminSection === 'expenses' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />)}
+          {adminSection === 'expenses' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />)}
         </button>
 
         <button
@@ -51,7 +51,7 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
           }`}
         >
           <Package size={22} />
-          {adminSection === 'menus' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />)}
+          {adminSection === 'menus' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />)}
         </button>
 
         <button
@@ -61,7 +61,7 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
           }`}
         >
           <UtensilsCrossed size={22} />
-          {adminSection === 'items' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />)}
+          {adminSection === 'items' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />)}
         </button>
         
         <button
@@ -71,7 +71,7 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
           }`}
         >
           <Users size={22} />
-          {adminSection === 'staff_management' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />)}
+          {adminSection === 'staff_management' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />)}
         </button>
       </div>
 
@@ -83,7 +83,7 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
           }`}
         >
           <Settings size={22} />
-          {adminSection === 'settings' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />)}
+          {adminSection === 'settings' && (<div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />)}
         </button>
         <button
           onClick={handleLogout}

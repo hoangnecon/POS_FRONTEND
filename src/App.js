@@ -191,23 +191,25 @@ function App() {
         return (
             <div className="h-screen bg-primary-bg flex flex-col md:flex-row md:overflow-hidden">
                 <MobileHeader 
-                    onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                    onToggleOrderPanel={() => setIsMobileOrderPanelOpen(!isMobileOrderPanelOpen)}
+                    onToggleSidebar={() => setIsMobileSidebarOpen(true)}
+                    onToggleOrderPanel={() => setIsMobileOrderPanelOpen(true)}
                     orderItemCount={orderItemCount}
                     activeSection={activeSection}
                     setActiveSection={setActiveSection}
                 />
                 
-                {(isMobileSidebarOpen || isMobileOrderPanelOpen) && <div onClick={() => { setIsMobileSidebarOpen(false); setIsMobileOrderPanelOpen(false); }} className="fixed inset-0 bg-black/50 z-20 md:hidden"></div>}
-
-                <div className={`fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                {isMobileSidebarOpen && <div onClick={() => setIsMobileSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-40 md:hidden"></div>}
+                
+                <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                     <Sidebar 
                         activeSection={activeSection} 
-                        setActiveSection={setActiveSection} 
+                        setActiveSection={(section) => {
+                            setActiveSection(section);
+                            setIsMobileSidebarOpen(false);
+                        }}
                         handleStaffLogout={handleStaffLogout}
                         handleBusinessLogout={handleBusinessLogout}
                         loggedInStaff={loggedInStaff}
-                        onItemClick={() => setIsMobileSidebarOpen(false)}
                     />
                 </div>
 
@@ -259,7 +261,8 @@ function App() {
                             <CashierExpenses expenses={expenses} addExpense={addExpense} />
                         )}
                     </div>
-
+                    
+                    {/* Order Panel - Desktop */}
                     <div className="hidden md:flex">
                         <OrderPanel
                             selectedTable={selectedTable}
@@ -280,7 +283,10 @@ function App() {
                     </div>
                 </div>
 
-                <div className={`fixed inset-y-0 right-0 z-30 w-full max-w-sm transform transition-transform duration-300 ease-in-out md:hidden ${isMobileOrderPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                {/* Mobile Order Panel Overlay */}
+                {isMobileOrderPanelOpen && <div onClick={() => setIsMobileOrderPanelOpen(false)} className="fixed inset-0 bg-black/50 z-40 md:hidden"></div>}
+                
+                <div className={`fixed inset-y-0 right-0 z-50 w-full max-w-sm transform transition-transform duration-300 ease-in-out md:hidden ${isMobileOrderPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                     <OrderPanel
                         selectedTable={selectedTable}
                         orders={orders}

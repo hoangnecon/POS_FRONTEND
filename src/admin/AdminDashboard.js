@@ -209,12 +209,22 @@ const AdminDashboard = ({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-primary-main rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl md:text-2xl font-bold text-primary-headline">Chi tiết đơn hàng {selectedOrder.id}</h3>
-              <button onClick={() => setShowOrderDetails(false)} className="text-primary-paragraph hover:text-primary-headline"><X size={24} /></button>
+              <h3 className="text-xl md:text-2xl font-bold text-primary-headline">
+                Chi tiết đơn hàng {selectedOrder.id}
+              </h3>
+              <button
+                onClick={() => setShowOrderDetails(false)}
+                className="text-primary-paragraph hover:text-primary-headline"
+              >
+                <X size={24} />
+              </button>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
-                <h4 className="font-bold text-primary-headline mb-3">Thông tin đơn hàng</h4>
+                <h4 className="font-bold text-primary-headline mb-3">
+                  Thông tin đơn hàng
+                </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-primary-paragraph">Mã đơn:</span><span className="font-medium text-primary-headline">{selectedOrder.id}</span></div>
                   <div className="flex justify-between"><span className="text-primary-paragraph">Bàn số:</span><span className="font-medium text-primary-headline">{selectedOrder.tableNumber}</span></div>
@@ -223,18 +233,39 @@ const AdminDashboard = ({
                   <div className="flex justify-between"><span className="text-primary-paragraph">Thanh toán:</span><div className="flex items-center gap-1">{selectedOrder.paymentMethod === 'cash' ? <Banknote size={14} className="text-primary-button" /> : <CreditCard size={14} className="text-primary-tertiary" />}<span className="font-medium text-primary-headline">{selectedOrder.paymentMethod === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'}</span></div></div>
                 </div>
               </div>
+
               <div>
                 <h4 className="font-bold text-primary-headline mb-3">Tổng kết</h4>
-                <div className="bg-primary-secondary rounded-xl p-4"><div className="flex justify-between items-center"><span className="text-lg font-bold text-primary-headline">Tổng cộng:</span><span className="text-2xl font-bold text-primary-button">{selectedOrder.total.toLocaleString('vi-VN')}đ</span></div></div>
+                <div className="bg-primary-secondary rounded-xl p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold text-primary-headline">
+                      Tổng cộng:
+                    </span>
+                    <span className="text-2xl font-bold text-primary-button">
+                      {selectedOrder.total.toLocaleString('vi-VN')}đ
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
+
             <div>
-              <h4 className="font-bold text-primary-headline mb-3">Chi tiết món ăn</h4>
+              <h4 className="font-bold text-primary-headline mb-3">
+                Chi tiết món ăn
+              </h4>
               <div className="space-y-3">
                 {selectedOrder.items.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-primary-secondary rounded-xl shadow-md">
-                    <div><span className="font-medium text-primary-headline">{item.name}</span><span className="text-sm text-primary-paragraph ml-2">x{item.quantity}</span></div>
-                    <span className="font-bold text-primary-button">{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-primary-secondary rounded-xl shadow-md"
+                  >
+                    <div>
+                      <span className="font-medium text-primary-headline">{item.name}</span>
+                      <span className="text-sm text-primary-paragraph ml-2">x{item.quantity}</span>
+                    </div>
+                    <span className="font-bold text-primary-button">
+                      {(item.price * item.quantity).toLocaleString('vi-VN')}đ
+                    </span>
                   </div>
                 ))}
               </div>

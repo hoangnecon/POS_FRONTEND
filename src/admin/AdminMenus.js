@@ -107,7 +107,7 @@ const AdminMenus = ({
             {activeTab === 'categories' &&
               <div className="flex gap-2">
                 <button onClick={() => handleOpenCategoryDialog()} className="bg-primary-button text-primary-main px-4 py-2 rounded-xl font-bold">Thêm Danh mục</button>
-                <button onClick={() => handleOpenMenuTypeDialog()} className="bg-primary-main text-primary-button px-4 py-2 rounded-xl font-bold">Thêm Loại Menu</button>
+                <button onClick={() => handleOpenMenuTypeDialog()} className="bg-primary-button text-primary-main px-4 py-2 rounded-xl font-bold">Thêm Loại Menu</button>
               </div>
             }
             {activeTab === 'tables' &&

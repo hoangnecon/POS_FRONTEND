@@ -1,4 +1,3 @@
-// src/components/common/Sidebar.js
 import React, { useState } from 'react';
 import {
   Home,
@@ -33,7 +32,7 @@ const Sidebar = ({ activeSection, setActiveSection, handleStaffLogout, handleBus
         >
           <Home size={22} />
           {activeSection === 'tables' && (
-            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />
+            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />
           )}
         </button>
 
@@ -47,7 +46,7 @@ const Sidebar = ({ activeSection, setActiveSection, handleStaffLogout, handleBus
         >
           <UtensilsCrossed size={22} />
           {activeSection === 'menu' && (
-            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />
+            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />
           )}
         </button>
 
@@ -61,7 +60,7 @@ const Sidebar = ({ activeSection, setActiveSection, handleStaffLogout, handleBus
         >
           <BarChart3 size={22} />
           {activeSection === 'dashboard' && (
-            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />
+            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />
           )}
         </button>
 
@@ -75,7 +74,7 @@ const Sidebar = ({ activeSection, setActiveSection, handleStaffLogout, handleBus
         >
           <TrendingDown size={22} />
           {activeSection === 'expenses' && (
-            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full" />
+            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-full hidden md:block" />
           )}
         </button>
       </div>
