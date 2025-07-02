@@ -170,7 +170,7 @@ const PaymentDialog = ({
     getCurrentOrders,
     getTotalAmount,
     processPayment,
-    handlePrint,
+    handlePrint, // This prop now takes a 'type' argument (e.g., 'provisional' or 'kitchen')
     quickDiscountOptions,
     bankSettings,
     banks,
@@ -200,6 +200,7 @@ const PaymentDialog = ({
         subtotal,
         total: finalAmount,
       };
+      // Call processPayment from App.js
       processPayment(paymentData, 'full');
     };
   
@@ -280,6 +281,7 @@ const PaymentDialog = ({
                   <button onClick={handleProcessPayment} className="w-full bg-primary-button hover:bg-primary-highlight text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Check size={20}/>Hoàn tất</button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-2">
+                    {/* NEW: Updated onClick for "In tạm tính" */}
                     <button onClick={() => handlePrint('provisional')} className="w-full bg-gray-200 text-gray-800 hover:bg-gray-300 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
                         <Printer size={20}/>In tạm tính
                     </button>
@@ -315,7 +317,7 @@ const OrderPanel = ({
     openItemNoteDialog,
     openTableNoteDialog,
     openChangeTableDialog,
-    handlePrint,
+    handlePrint, // This prop now expects a 'type' argument
     quickDiscountOptions,
     bankSettings,
     banks,
@@ -601,7 +603,7 @@ const OrderPanel = ({
             getCurrentOrders={getCurrentOrders}
             getTotalAmount={getTotalAmount}
             processPayment={processPayment}
-            handlePrint={handlePrint}
+            handlePrint={handlePrint} // Pass handlePrint prop down to PaymentDialog
             quickDiscountOptions={quickDiscountOptions}
             bankSettings={bankSettings}
             banks={banks}

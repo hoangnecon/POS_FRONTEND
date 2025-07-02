@@ -7,9 +7,10 @@ import {
   User,
   TrendingDown,
   Power,
+  RefreshCcw, // Icon mới cho nút chuyển đổi
 } from 'lucide-react';
 
-const Sidebar = ({ activeSection, setActiveSection, handleStaffLogout, handleBusinessLogout, loggedInStaff, onItemClick }) => {
+const Sidebar = ({ activeSection, setActiveSection, handleStaffLogout, handleBusinessLogout, loggedInStaff, onItemClick, isDemoModeActive, handleToggleView }) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleSectionClick = (section) => {
@@ -80,34 +81,32 @@ const Sidebar = ({ activeSection, setActiveSection, handleStaffLogout, handleBus
       </div>
 
       <div className="flex flex-col space-y-4">
+        {/* NEW: Toggle button for demo mode */}
+        {isDemoModeActive && (
+            <button
+                onClick={handleToggleView}
+                className="relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group text-white hover:text-white/80 hover:bg-primary-highlight"
+                title="Chuyển sang Admin View"
+            >
+                <RefreshCcw size={22} />
+                <span className="absolute bottom-1 right-1 bg-blue-500 text-white text-xs rounded-full px-1">A</span>
+            </button>
+        )}
+
         <div className="relative">
-          <button
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="w-14 h-14 rounded-full bg-white/20 text-white flex items-center justify-center"
-          >
-            <User size={22} />
-          </button>
           {userMenuOpen && (
             <div className="absolute bottom-20 left-0 w-60 bg-primary-main rounded-xl shadow-2xl p-2 z-10">
               <div className="p-2 border-b border-primary-secondary">
                 <p className="font-bold text-primary-headline">{loggedInStaff?.name}</p>
                 <p className="text-xs text-primary-paragraph">{loggedInStaff?.email}</p>
               </div>
-              <button
-                onClick={() => {
-                  handleStaffLogout();
-                  setUserMenuOpen(false);
-                }}
-                className="w-full text-left p-2 rounded-lg hover:bg-primary-secondary flex items-center gap-2"
-              >
-                <LogOut size={16}/> Đổi tài khoản
-              </button>
+
             </div>
           )}
         </div>
         <button
           onClick={handleBusinessLogout}
-          className="w-14 h-14 rounded-2xl text-white/50 hover:text-white/80 hover:bg-primary-highlight flex items-center justify-center transition-all duration-300"
+          className="w-14 h-14 rounded-2xl bg-white/10 text-white/50 hover:text-white/80 hover:bg-primary-highlight flex items-center justify-center transition-all duration-300"
         >
           <Power size={22} />
         </button>

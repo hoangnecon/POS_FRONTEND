@@ -1,4 +1,3 @@
-// src/hooks/usePrinting.js
 import { useState } from 'react';
 
 // Định nghĩa initialSettings (sử dụng cùng cấu hình ban đầu từ AdminPrintSettings.js)
@@ -25,24 +24,24 @@ const initialSettings = {
   showWifi: true,
   wifiPassword: 'your_wifi_password',
   wifiStyle: { fontSize: 9, fontWeight: 'bold', fontStyle: 'normal' },
-  defaultPrinter: '',
-  printerShareName: '',
+  defaultPrinter: '', // Không còn dùng cho window.print
+  printerShareName: '', // Không còn dùng cho window.print
 };
 
 const usePrinting = (orders, selectedTable, tables) => {
-  const triggerPrint = async (type) => {
+  // `triggerPrint` sẽ được gọi từ `App.js` sau khi setup `useReactToPrint`
+  // Hàm này sẽ trả về `receiptData` để `PrintReceipt.js` sử dụng
+  const getReceiptData = (type) => { // Đổi tên từ triggerPrint sang getReceiptData cho rõ ràng mục đích
     const currentOrders = orders[selectedTable] || [];
     if (currentOrders.length === 0) {
-      alert('Không có món nào để in.');
-      return;
+      // Có thể không cần alert ở đây, mà chỉ trả về null hoặc lỗi để App.js xử lý
+      return null; 
     }
 
     const savedSettings = localStorage.getItem('printSettings');
     const printSettings = savedSettings ? { ...initialSettings, ...JSON.parse(savedSettings) } : initialSettings;
-    if (!printSettings.defaultPrinter || !printSettings.printerShareName) {
-      alert('Vui lòng cấu hình máy in (tên máy in và Share name) trong Admin > Cài đặt in hóa đơn.');
-      return;
-    }
+    
+    // Không còn kiểm tra defaultPrinter hay printerShareName ở đây
 
     const tableName = tables.find(t => t.id === selectedTable)?.name || 'Không xác định';
     const currentDate = new Date().toLocaleString('vi-VN', {
@@ -53,59 +52,36 @@ const usePrinting = (orders, selectedTable, tables) => {
       year: 'numeric',
     });
 
-    const payload = {
-      isKitchenPrint: type === 'kitchen',
-      tableName,
-      currentDate,
+    // Chuẩn bị dữ liệu hóa đơn cho PrintReceipt component
+    const receiptData = {
+      type: type === 'kitchen' ? 'PHIẾU BẾP' : 'PHIẾU TẠM TÍNH', // Loại phiếu
+      table: tableName,
+      date: currentDate,
+      cashier: 'Thu Ngân', // Thay bằng loggedInStaff?.name nếu có
       items: currentOrders.map(item => ({
         name: item.name,
         quantity: item.quantity,
         price: item.price,
       })),
       total: currentOrders.reduce((sum, item) => sum + item.price * item.quantity, 0),
-      settings: printSettings,
+      settings: printSettings, // Truyền toàn bộ cài đặt để PrintReceipt sử dụng
     };
 
-    console.log('Gửi payload in:', payload);
-    try {
-      const response = await fetch('http://localhost:9898/print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Lỗi máy chủ in: ${await response.text()}`);
-      }
-
-      const result = await response.json();
-      console.log('Phản hồi từ server:', result);
-      alert(result.message || 'In thành công!');
-    } catch (error) {
-      console.error('Lỗi khi in:', error);
-      alert(`Không thể in: ${error.message}. Vui lòng kiểm tra:
-        - Ứng dụng Electron đang chạy (http://localhost:9898).
-        - Máy in K57 đã được chia sẻ với Share name "${printSettings.printerShareName}".
-        - Driver máy in đã được cài đặt đúng.`);
-    }
+    return receiptData;
   };
 
+  // `processPayment` trong hook này sẽ được đơn giản hóa
+  // và logic in thực tế sẽ nằm trong App.js
   const processPayment = (paymentData, type = 'full') => {
-    if (type === 'full') {
-      triggerPrint('provisional');
-      // Logic for clearing table or updating partial order should be handled outside this hook,
-      // as it modifies order state which is managed by useOrderManagement.
-      // This hook should focus solely on printing logic.
-      // We will pass clearTable and setOrders as dependencies or callbacks from App.js.
-    } else if (type === 'partial') {
-      // Similarly, partial payment logic will be handled by useOrderManagement
-    }
+    // Logic của processPayment sẽ chủ yếu nằm ở App.js,
+    // nơi nó sẽ gọi getReceiptData và sau đó trigger hàm in từ useReactToPrint.
+    // Hook này chỉ cung cấp dữ liệu và cấu hình ban đầu.
   };
 
   return {
-    triggerPrint,
-    processPayment, // This function itself will be simplified in App.js to call clearTable/setOrders from useOrderManagement
-    initialSettings, // Expose initial settings if AdminPrintSettings needs it for restore defaults
+    getReceiptData, // Cung cấp hàm để lấy dữ liệu hóa đơn
+    processPayment, // Giữ lại để tránh phá vỡ cấu trúc hiện tại, nhưng logic sẽ được di chuyển
+    initialSettings, 
   };
 };
 

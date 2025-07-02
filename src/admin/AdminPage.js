@@ -57,6 +57,8 @@ const AdminPage = ({
   setBankSettings,
   bankList,
   bankListLoading,
+  isDemoModeActive, // Thêm prop này từ App.js
+  handleToggleView, // Thêm prop này từ App.js
 }) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -199,6 +201,8 @@ const AdminPage = ({
                     setIsMobileSidebarOpen(false); // Đóng sidebar khi chọn mục
                 }}
                 handleLogout={handleLogout}
+                isDemoModeActive={isDemoModeActive} // Truyền prop isDemoModeActive
+                handleToggleView={handleToggleView} // Truyền prop handleToggleView
             />
         </div>
 

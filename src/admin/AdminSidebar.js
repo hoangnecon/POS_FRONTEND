@@ -8,9 +8,10 @@ import {
   TrendingDown,
   Users,
   TrendingUp,
+  RefreshCcw, // Icon mới cho nút chuyển đổi
 } from 'lucide-react';
 
-const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
+const AdminSidebar = ({ adminSection, setAdminSection, handleLogout, isDemoModeActive, handleToggleView }) => {
   return (
     <div className="w-20 sidebar-gradient flex flex-col items-center py-8 shadow-2xl h-full">
       <div className="flex flex-col space-y-4 flex-1">
@@ -76,6 +77,18 @@ const AdminSidebar = ({ adminSection, setAdminSection, handleLogout }) => {
       </div>
 
       <div className="flex flex-col space-y-4">
+        {/* NEW: Toggle button for demo mode */}
+        {isDemoModeActive && (
+            <button
+                onClick={handleToggleView}
+                className="relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group text-white hover:text-white/80 hover:bg-primary-highlight"
+                title="Chuyển sang Staff View"
+            >
+                <RefreshCcw size={22} />
+                <span className="absolute bottom-1 right-1 bg-blue-500 text-white text-xs rounded-full px-1">S</span>
+            </button>
+        )}
+
         <button
           onClick={() => setAdminSection('settings')}
           className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group ${
