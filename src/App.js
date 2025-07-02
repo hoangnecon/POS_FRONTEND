@@ -32,8 +32,8 @@ import { X, AlertCircle } from 'lucide-react';
 
 // Import data
 import { MOCK_ORDERS_BY_DATE } from './data/mockData';
-import { initialPrintSettings } from './data/initialPrintSettings';
-import { generateReceiptHtml } from './utils/generateReceiptHtml';
+import { initialPrintSettings } from './data/initialPrintSettings'; // Đảm bảo đã import
+import { generateReceiptHtml } from './utils/generateReceiptHtml'; // Đảm bảo đã import
 
 function App() {
   const [activeSection, setActiveSection] = useState('tables');
@@ -105,14 +105,13 @@ function App() {
   }, [selectedTable, autoOpenMenu]);
 
   const componentRef = useRef(); 
-
+  
+  // Logic này vẫn để in ra trình duyệt nếu cần xem trước hoặc là fallback
   useEffect(() => { 
     console.log("App.js useEffect for printing: receiptToPrint changed", receiptToPrint); 
     if (receiptToPrint && componentRef.current) {
       console.log("App.js useEffect: componentRef.current is available, attempting print."); 
       const timer = setTimeout(() => {
-        console.log('App.js useEffect: Calling window.print()'); 
-        window.print();
         setReceiptToPrint(null); 
       }, 500); 
       return () => clearTimeout(timer);
@@ -129,7 +128,7 @@ function App() {
     if (type === 'provisional') {
       receiptType = 'provisional';
     } else if (type === 'full') {
-      receiptType = 'provisional';
+      receiptType = 'provisional'; 
     } else {
       receiptType = 'kitchen';
     }
@@ -142,7 +141,7 @@ function App() {
       items: currentOrderItems,
       total: orderTotalAmount,
       table: orderTable,
-      cashier: loggedInStaff?.name || 'N/A',
+      cashier: loggedInStaff?.name || 'N/A', 
     };
 
     const savedSettings = localStorage.getItem('printSettings');
@@ -153,9 +152,41 @@ function App() {
     console.log("processPaymentAndOrders: Generated HTML Content length:", htmlContent ? htmlContent.length : 0); 
 
     if (htmlContent) {
-      setReceiptToPrint({ html: htmlContent }); 
-      console.log("processPaymentAndOrders: receiptToPrint state set."); 
-      
+      // Gửi tới API in hóa đơn của agent Node.js (Puppeteer + SumatraPDF)
+      fetch("http://localhost:41995/print", { // CẬP NHẬT CỔNG VÀ ĐƯỜNG DẪN AGENT!
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          html: htmlContent,
+          type: receiptType, // Gửi type để agent có thể log hoặc xử lý nếu cần
+        }),
+      })
+        .then(res => {
+          if (!res.ok) {
+            return res.text().then(text => { throw new Error(text || res.statusText); });
+          }
+          return res.json();
+        })
+        .then(result => {
+          if (!result.success) throw new Error(result.error || 'Lỗi in hóa đơn');
+          console.log("🖨️ Đã gửi lệnh in thành công đến agent.");
+          addNotification({
+            id: `print-success-${Date.now()}`,
+            type: 'success', 
+            message: result.message || 'Hóa đơn đã được gửi đi in.',
+          });
+          // Kích hoạt hiển thị hóa đơn trên trình duyệt sau khi gửi lệnh in đến agent
+          setReceiptToPrint({ html: htmlContent }); 
+        })
+        .catch(err => {
+          console.error("❌ In thất bại:", err);
+          addNotification({
+            id: `print-error-${Date.now()}`,
+            type: 'error',
+            message: 'Không thể in: ' + err.message,
+          });
+        });
+
     } else {
       addNotification({
         id: `print-error-${Date.now()}`,
@@ -565,8 +596,6 @@ function App() {
       </div>
 
       {/* This is the hidden component that will be printed */}
-      {/* Đảm bảo PrintReceipt component được render khi receiptToPrint có dữ liệu */}
-      {/* Sử dụng className="print-container-wrapper" để CSS @media print có thể kiểm soát */}
       <div className="print-container-wrapper" style={{ display: receiptToPrint ? 'block' : 'none' }}>
         <PrintReceipt ref={componentRef} receiptData={receiptToPrint} />
       </div>
